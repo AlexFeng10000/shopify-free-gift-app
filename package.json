@@ -10,9 +10,10 @@
     "dev-windows": "start.bat",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
-    "build": "cd client && npm run build && cd server && npm install",
+    "build": "cd client && npm install && npm run build",
     "start": "cd server && npm start",
-    "install-all": "cd server && npm install && cd ../client && npm install && cd .."
+    "install-all": "cd server && npm install && cd ../client && npm install && cd ..",
+    "vercel-build": "cd client && npm install && npm run build"
   },
   "keywords": [
     "shopify",
@@ -23,6 +24,15 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "concurrently": "^7.6.0"
+    "concurrently": "^7.6.0",
+    "@shopify/app-bridge": "^3.7.0",
+    "@shopify/app-bridge-react": "^3.7.0",
+    "@shopify/polaris": "^10.49.1",
+    "axios": "^1.4.0",
+    "cross-env": "^7.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "react-scripts": "5.0.1"
   }
 }
