@@ -11,8 +11,7 @@ import {
   Stack,
   Checkbox,
   Select,
-  Text,
-  TextStyle
+  Text
 } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';

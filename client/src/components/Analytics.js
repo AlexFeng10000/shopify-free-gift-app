@@ -25,7 +25,7 @@ function Analytics() {
 
   useEffect(() => {
     loadAnalytics();
-  }, [period]);
+  }, [period, loadAnalytics]);
 
   const loadAnalytics = async () => {
     try {
