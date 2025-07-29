@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Page,
   Layout,
@@ -23,11 +23,7 @@ function Analytics() {
   const [period, setPeriod] = useState('7');
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [period, loadAnalytics]);
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/gifts/analytics?days=${period}`);
@@ -39,7 +35,11 @@ function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const periodOptions = [
     { label: 'Last 7 days', value: '7' },
