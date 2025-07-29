@@ -13,8 +13,8 @@
     "build": "cd client && npm run build",
     "build-windows": "cd client && npm run build && xcopy /E /I /Y build ..\\server\\public",
     "start": "cd server && npm start",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
-    "postinstall": "npm run install-all && npm run build"
+    "install-all": "cd server && npm install && cd ../client && npm install && cd ..",
+    "postinstall": "npm run install-all"
   },
   "keywords": [
     "shopify",
