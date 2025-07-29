@@ -13,7 +13,6 @@ import {
   Text
 } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 function Settings() {
   const navigate = useNavigate();
@@ -43,13 +42,21 @@ function Settings() {
 
   const loadSettings = async () => {
     try {
-      // Mock data for demo purposes
-      const mockSettings = {
-        threshold_amount: 100,
-        gift_product_id: 'prod_1',
-        gift_variant_id: 'prod_1_var_1',
-        is_active: false
-      };
+      // Get settings from localStorage if available (simulating persistence)
+      const savedSettings = localStorage.getItem('giftAppSettings');
+      let mockSettings;
+      
+      if (savedSettings) {
+        mockSettings = JSON.parse(savedSettings);
+      } else {
+        // Default mock data
+        mockSettings = {
+          threshold_amount: 100,
+          gift_product_id: 'prod_1',
+          gift_variant_id: 'prod_1_var_1',
+          is_active: false
+        };
+      }
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -106,11 +113,19 @@ function Settings() {
         throw new Error('Please select a gift product and variant before activating');
       }
 
+      // Save to localStorage (simulating API call)
+      localStorage.setItem('giftAppSettings', JSON.stringify(settings));
+      
       // Mock API call - simulate save
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      
+      // Auto-navigate back to dashboard after successful save
+      setTimeout(() => {
+        navigate('/', { state: { refresh: true } });
+      }, 1500);
+      
     } catch (err) {
       console.error('Error saving settings:', err);
       setError(err.message || 'Failed to save settings');

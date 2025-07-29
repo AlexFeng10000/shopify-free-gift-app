@@ -19,11 +19,11 @@ import {
   AnalyticsMajor,
   SettingsMajor
 } from '@shopify/polaris-icons';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -33,17 +33,36 @@ function Dashboard() {
     loadDashboardData();
   }, []);
 
+  // Refresh data when navigating back from other pages
+  useEffect(() => {
+    if (location.state?.refresh) {
+      loadDashboardData();
+      // Clear the refresh flag
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const showUpdateSuccess = location.state?.refresh;
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
-      // Mock data for demo purposes
-      const mockSettings = {
-        threshold_amount: 100,
-        gift_product_id: 'prod_1',
-        gift_variant_id: 'prod_1_var_1',
-        is_active: true
-      };
+      // Get settings from localStorage if available (simulating persistence)
+      const savedSettings = localStorage.getItem('giftAppSettings');
+      let mockSettings;
+      
+      if (savedSettings) {
+        mockSettings = JSON.parse(savedSettings);
+      } else {
+        // Default mock data
+        mockSettings = {
+          threshold_amount: 100,
+          gift_product_id: 'prod_1',
+          gift_variant_id: 'prod_1_var_1',
+          is_active: true
+        };
+      }
       
       const mockAnalytics = {
         gifts_added: 47,
@@ -115,10 +134,23 @@ function Dashboard() {
                     content: 'View Analytics',
                     icon: AnalyticsMajor,
                     onAction: () => navigate('/analytics')
+                },
+                {
+                    content: 'Refresh',
+                    onAction: loadDashboardData
                 }
             ]}
         >
             <Layout>
+                {/* Update Success Banner */}
+                {showUpdateSuccess && (
+                    <Layout.Section>
+                        <Banner status="success" title="Settings Updated">
+                            <p>Your free gift settings have been saved and are now active!</p>
+                        </Banner>
+                    </Layout.Section>
+                )}
+
                 {/* Status Banner */}
                 <Layout.Section>
                     {!isConfigured ? (
