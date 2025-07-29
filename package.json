@@ -1,0 +1,30 @@
+{
+  "name": "shopify-free-gift-app",
+  "version": "1.0.0",
+  "description": "Auto Free Gift Adder for Shopify stores",
+  "main": "server/index.js",
+  "scripts": {
+    "setup": "node quick-start.js",
+    "check": "node check-setup.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev-windows": "start.bat",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "build-windows": "cd client && npm run build && xcopy /E /I /Y build ..\\server\\public",
+    "start": "cd server && npm start",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "postinstall": "npm run install-all && npm run build"
+  },
+  "keywords": [
+    "shopify",
+    "app",
+    "free-gift",
+    "upsell"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
