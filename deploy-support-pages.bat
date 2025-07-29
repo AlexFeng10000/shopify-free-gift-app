@@ -15,6 +15,7 @@ echo ✅ Privacy Policy: https://free-gift-booster.vercel.app/privacy.html
 echo ✅ FAQ: https://free-gift-booster.vercel.app/faq.html
 echo ✅ Setup Guide: https://free-gift-booster.vercel.app/setup.html
 echo ✅ Contact: https://free-gift-booster.vercel.app/contact.html
+echo ✅ Pricing: https://free-gift-booster.vercel.app/pricing.html
 echo.
 echo Use these URLs in your Shopify App Store listing!
 echo.
