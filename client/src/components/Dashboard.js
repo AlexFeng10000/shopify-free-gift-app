@@ -37,14 +37,26 @@ function Dashboard() {
     try {
       setLoading(true);
       
-      // Load settings and analytics in parallel
-      const [settingsResponse, analyticsResponse] = await Promise.all([
-        axios.get('/api/gifts/settings'),
-        axios.get('/api/gifts/analytics?days=7')
-      ]);
-
-      setSettings(settingsResponse.data);
-      setAnalytics(analyticsResponse.data);
+      // Mock data for demo purposes
+      const mockSettings = {
+        threshold_amount: 100,
+        gift_product_id: 'prod_1',
+        gift_variant_id: 'prod_1_var_1',
+        is_active: true
+      };
+      
+      const mockAnalytics = {
+        gifts_added: 47,
+        conversion_rate: 23.5,
+        total_triggers: 200,
+        avg_cart_value: 125.50
+      };
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setSettings(mockSettings);
+      setAnalytics(mockAnalytics);
       setError(null);
     } catch (err) {
       console.error('Error loading dashboard:', err);

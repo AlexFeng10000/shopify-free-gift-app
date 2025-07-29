@@ -43,8 +43,17 @@ function Settings() {
 
   const loadSettings = async () => {
     try {
-      const response = await axios.get('/api/gifts/settings');
-      setSettings(response.data);
+      // Mock data for demo purposes
+      const mockSettings = {
+        threshold_amount: 100,
+        gift_product_id: 'prod_1',
+        gift_variant_id: 'prod_1_var_1',
+        is_active: false
+      };
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setSettings(mockSettings);
     } catch (err) {
       console.error('Error loading settings:', err);
       setError('Failed to load settings');
@@ -97,13 +106,14 @@ function Settings() {
         throw new Error('Please select a gift product and variant before activating');
       }
 
-      await axios.post('/api/gifts/settings', settings);
+      // Mock API call - simulate save
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('Error saving settings:', err);
-      setError(err.response?.data?.error || err.message || 'Failed to save settings');
+      setError(err.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }

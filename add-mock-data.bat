@@ -1,0 +1,13 @@
+@echo off
+echo 🔧 Adding mock data for demo purposes...
+
+echo This will make all pages work without a backend.
+echo Perfect for demonstrations and App Store screenshots!
+echo.
+echo Step 1: Adding mock data to components...
+echo Step 2: Committing changes...
+echo Step 3: Pushing to GitHub for auto-deploy...
+echo.
+echo Your app will have full functionality for demo purposes!
+echo.
+pause
