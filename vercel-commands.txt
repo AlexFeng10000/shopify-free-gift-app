@@ -1,0 +1,34 @@
+# Vercel Environment Variables - Manual Setup Commands
+# Replace YOUR_VERCEL_URL with your actual Vercel app URL
+
+# 1. Install and login to Vercel CLI
+npm install -g vercel
+vercel login
+
+# 2. Set environment variables (run each command separately)
+# Replace https://your-app.vercel.app with your actual URL
+
+echo "0a84e1df4c003abfab2f61d8344ea04b" | vercel env add SHOPIFY_API_KEY production
+
+echo "90636fd6406e3aede92601aa79a52350" | vercel env add SHOPIFY_API_SECRET production
+
+echo "read_products,write_products,read_orders,write_draft_orders" | vercel env add SHOPIFY_SCOPES production
+
+echo "https://your-app.vercel.app" | vercel env add SHOPIFY_APP_URL production
+
+echo "your-app.vercel.app" | vercel env add HOST production
+
+echo "production" | vercel env add NODE_ENV production
+
+echo "5000" | vercel env add PORT production
+
+echo "./database.sqlite" | vercel env add DATABASE_URL production
+
+echo "0a84e1df4c003abfab2f61d8344ea04b" | vercel env add REACT_APP_SHOPIFY_API_KEY production
+
+echo "false" | vercel env add GENERATE_SOURCEMAP production
+
+# 3. Deploy
+vercel --prod
+
+# Note: Replace the URLs in the SHOPIFY_APP_URL and HOST commands with your actual Vercel app URL

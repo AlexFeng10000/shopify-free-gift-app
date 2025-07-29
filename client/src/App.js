@@ -4,8 +4,8 @@ import { AppProvider } from '@shopify/polaris';
 import '@shopify/polaris/build/esm/styles.css';
 
 import Dashboard from './components/Dashboard';
-import Settings from './components/Settings';
 import Analytics from './components/Analytics';
+import GiftTiers from './components/GiftTiers';
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/gift-tiers" element={<GiftTiers />} />
           <Route path="/analytics" element={<Analytics />} />
         </Routes>
       </Router>

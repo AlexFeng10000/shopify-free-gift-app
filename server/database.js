@@ -27,7 +27,23 @@ const init = () => {
 };
 
 const createTables = () => {
-  // Store settings for each shop
+  // Store multiple gift tiers for each shop
+  db.run(`
+    CREATE TABLE IF NOT EXISTS gift_tiers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      shop_domain TEXT NOT NULL,
+      threshold_amount REAL NOT NULL,
+      gift_product_id TEXT,
+      gift_variant_id TEXT,
+      gift_description TEXT,
+      is_active BOOLEAN DEFAULT 1,
+      tier_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Legacy table kept for API compatibility only
   db.run(`
     CREATE TABLE IF NOT EXISTS gift_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,6 +64,7 @@ const createTables = () => {
       shop_domain TEXT NOT NULL,
       order_id TEXT,
       cart_total REAL,
+      gift_tier_id INTEGER,
       gift_added BOOLEAN,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -56,6 +73,60 @@ const createTables = () => {
   console.log('✅ Database tables created/verified');
 };
 
+// Get all gift tiers for a shop
+const getGiftTiers = (shopDomain) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM gift_tiers WHERE shop_domain = ? ORDER BY threshold_amount ASC',
+      [shopDomain],
+      (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      }
+    );
+  });
+};
+
+// Save multiple gift tiers
+const saveGiftTiers = (shopDomain, tiers) => {
+  return new Promise((resolve, reject) => {
+    // Start transaction
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION');
+      
+      // Delete existing tiers for this shop
+      db.run('DELETE FROM gift_tiers WHERE shop_domain = ?', [shopDomain]);
+      
+      // Insert new tiers
+      const stmt = db.prepare(`
+        INSERT INTO gift_tiers 
+        (shop_domain, threshold_amount, gift_product_id, gift_variant_id, gift_description, is_active, tier_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      tiers.forEach((tier, index) => {
+        stmt.run([
+          shopDomain,
+          tier.threshold_amount,
+          tier.gift_product_id,
+          tier.gift_variant_id,
+          tier.gift_description || '',
+          tier.is_active !== false,
+          index
+        ]);
+      });
+      
+      stmt.finalize();
+      
+      db.run('COMMIT', (err) => {
+        if (err) reject(err);
+        else resolve({ success: true });
+      });
+    });
+  });
+};
+
+// Legacy function for backward compatibility
 const getGiftSettings = (shopDomain) => {
   return new Promise((resolve, reject) => {
     db.get(
@@ -69,6 +140,7 @@ const getGiftSettings = (shopDomain) => {
   });
 };
 
+// Legacy function for backward compatibility
 const saveGiftSettings = (shopDomain, settings) => {
   return new Promise((resolve, reject) => {
     const { threshold_amount, gift_product_id, gift_variant_id, is_active } = settings;
@@ -121,6 +193,8 @@ const getAnalytics = (shopDomain, days = 30) => {
 
 module.exports = {
   init,
+  getGiftTiers,
+  saveGiftTiers,
   getGiftSettings,
   saveGiftSettings,
   logGiftAnalytics,

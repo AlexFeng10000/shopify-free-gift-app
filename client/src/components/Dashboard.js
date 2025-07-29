@@ -48,21 +48,32 @@ function Dashboard() {
     try {
       setLoading(true);
       
-      // Get settings from localStorage if available (simulating persistence)
-      const savedSettings = localStorage.getItem('giftAppSettings');
-      let mockSettings;
+      // Get gift tiers from localStorage (simulating API)
+      const savedTiers = localStorage.getItem('giftTiers');
+      let mockTiers;
       
-      if (savedSettings) {
-        mockSettings = JSON.parse(savedSettings);
+      if (savedTiers) {
+        mockTiers = JSON.parse(savedTiers);
       } else {
-        // Default mock data
-        mockSettings = {
+        // Default mock data - single tier for backward compatibility
+        mockTiers = [{
+          id: 1,
           threshold_amount: 100,
           gift_product_id: 'prod_1',
           gift_variant_id: 'prod_1_var_1',
+          gift_description: 'Free gift with $100+ purchase',
           is_active: true
-        };
+        }];
       }
+      
+      // Convert to legacy format for existing components
+      const legacySettings = {
+        threshold_amount: mockTiers[0]?.threshold_amount || 100,
+        gift_product_id: mockTiers[0]?.gift_product_id || 'prod_1',
+        gift_variant_id: mockTiers[0]?.gift_variant_id || 'prod_1_var_1',
+        is_active: mockTiers.some(tier => tier.is_active),
+        tiers: mockTiers
+      };
       
       const mockAnalytics = {
         gifts_added: 47,
@@ -74,7 +85,7 @@ function Dashboard() {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      setSettings(mockSettings);
+      setSettings(legacySettings);
       setAnalytics(mockAnalytics);
       setError(null);
     } catch (err) {
@@ -125,9 +136,9 @@ function Dashboard() {
             title="Free Gift Dashboard"
             subtitle="Automatically add free gifts to boost your average order value"
             primaryAction={{
-                content: 'Settings',
+                content: 'Manage Gift Tiers',
                 icon: SettingsMajor,
-                onAction: () => navigate('/settings')
+                onAction: () => navigate('/gift-tiers')
             }}
             secondaryActions={[
                 {
@@ -158,26 +169,26 @@ function Dashboard() {
                             title="Setup Required"
                             status="warning"
                             action={{
-                                content: 'Configure Now',
-                                onAction: () => navigate('/settings')
+                                content: 'Set Up Gift Tiers',
+                                onAction: () => navigate('/gift-tiers')
                             }}
                         >
-                            <p>Configure your free gift settings to start boosting sales!</p>
+                            <p>Configure your gift tiers to start boosting sales with automatic free gifts!</p>
                         </Banner>
                     ) : !isActive ? (
                         <Banner
-                            title="Free Gift Feature Disabled"
+                            title="Gift Tiers Disabled"
                             status="info"
                             action={{
-                                content: 'Enable Now',
-                                onAction: () => navigate('/settings')
+                                content: 'Enable Tiers',
+                                onAction: () => navigate('/gift-tiers')
                             }}
                         >
-                            <p>Your free gift is configured but not active. Enable it to start adding gifts automatically.</p>
+                            <p>Your gift tiers are configured but not active. Enable them to start adding gifts automatically.</p>
                         </Banner>
                     ) : (
-                        <Banner title="Free Gift Active" status="success">
-                            <p>🎉 Your free gift feature is active and working! Gifts will be added automatically when customers spend ${settings.threshold_amount} or more.</p>
+                        <Banner title="Gift Tiers Active" status="success">
+                            <p>🎉 Your gift tiers are active and working! Customers will receive gifts automatically based on their spending levels.</p>
                         </Banner>
                     )}
                 </Layout.Section>
@@ -225,34 +236,38 @@ function Dashboard() {
 
                 {/* Current Configuration */}
                 <Layout.Section>
-                    <Card title="Current Configuration" sectioned>
-                        <Stack vertical spacing="loose">
-                            <Stack alignment="center" distribution="equalSpacing">
-                                <Stack vertical spacing="extraTight">
-                                    <Text variation="strong">Threshold Amount</Text>
-                                    <Text>${settings?.threshold_amount || 'Not set'}</Text>
-                                </Stack>
-                                <Stack vertical spacing="extraTight">
-                                    <Text variation="strong">Status</Text>
-                                    <Badge status={isActive ? 'success' : 'attention'}>
-                                        {isActive ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                </Stack>
+                    <Card title={`Gift Configuration (${settings?.tiers?.length || 0} tiers)`} sectioned>
+                        {settings?.tiers && settings.tiers.length > 0 ? (
+                            <Stack vertical spacing="loose">
+                                {settings.tiers
+                                    .sort((a, b) => a.threshold_amount - b.threshold_amount)
+                                    .map((tier, index) => (
+                                    <Stack key={tier.id || index} alignment="center" distribution="equalSpacing">
+                                        <Stack vertical spacing="extraTight">
+                                            <Text variation="strong">Tier {index + 1}</Text>
+                                            <Text>${tier.threshold_amount}</Text>
+                                        </Stack>
+                                        <Stack vertical spacing="extraTight">
+                                            <Text variation="strong">Gift</Text>
+                                            <Text>{tier.gift_description || 'Free Gift'}</Text>
+                                        </Stack>
+                                        <Stack vertical spacing="extraTight">
+                                            <Text variation="strong">Status</Text>
+                                            <Badge status={tier.is_active ? 'success' : 'attention'}>
+                                                {tier.is_active ? 'Active' : 'Inactive'}
+                                            </Badge>
+                                        </Stack>
+                                    </Stack>
+                                ))}
                             </Stack>
-
-                            {settings?.gift_product_id ? (
-                                <Stack vertical spacing="extraTight">
-                                    <Text variation="strong">Gift Product</Text>
-                                    <Text>Product ID: {settings.gift_product_id}</Text>
-                                    <Text variation="subdued">Variant ID: {settings.gift_variant_id}</Text>
-                                </Stack>
-                            ) : (
-                                <Stack vertical spacing="extraTight">
-                                    <Text variation="strong">Gift Product</Text>
-                                    <Text variation="subdued">No gift product selected</Text>
-                                </Stack>
-                            )}
-                        </Stack>
+                        ) : (
+                            <Stack alignment="center" spacing="loose">
+                                <Text variation="subdued">No gift tiers configured</Text>
+                                <Button primary onClick={() => navigate('/gift-tiers')}>
+                                    Set Up Gift Tiers
+                                </Button>
+                            </Stack>
+                        )}
                     </Card>
                 </Layout.Section>
 
@@ -263,9 +278,9 @@ function Dashboard() {
                             <Button
                                 primary
                                 icon={CirclePlusMajor}
-                                onClick={() => navigate('/settings')}
+                                onClick={() => navigate('/gift-tiers')}
                             >
-                                {isConfigured ? 'Update Settings' : 'Setup Free Gift'}
+                                {isConfigured ? 'Manage Gift Tiers' : 'Setup Gift Tiers'}
                             </Button>
 
                             <Button
@@ -280,19 +295,19 @@ function Dashboard() {
 
                 {/* Help Section */}
                 <Layout.Section>
-                    <Card title="How It Works" sectioned>
+                    <Card title="How Gift Tiers Work" sectioned>
                         <Stack vertical spacing="loose">
                             <Text>
-                                <strong>1. Set Threshold:</strong> Choose the minimum cart value (e.g., $100)
+                                <strong>1. Create Multiple Tiers:</strong> Set different spending thresholds (e.g., $25, $50, $100)
                             </Text>
                             <Text>
-                                <strong>2. Select Gift:</strong> Pick a product to give away for free
+                                <strong>2. Assign Gifts:</strong> Choose what free product customers get at each level
                             </Text>
                             <Text>
-                                <strong>3. Activate:</strong> Turn on the feature and watch your sales grow!
+                                <strong>3. Activate Tiers:</strong> Turn on the tiers and watch your average order value grow!
                             </Text>
                             <Text variation="subdued">
-                                When customers reach your threshold, the free gift is automatically added to their cart.
+                                Customers automatically receive ALL gifts they qualify for based on their cart total.
                             </Text>
                         </Stack>
                     </Card>
