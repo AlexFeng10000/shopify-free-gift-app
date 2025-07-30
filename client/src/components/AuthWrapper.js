@@ -51,9 +51,16 @@ function AuthWrapper({ children }) {
           }, 3000);
         }
       } else {
-        // No shop parameter - might need authentication
-        setAuthenticated(false);
-        setError('No shop domain found. Please install the app from the Shopify App Store.');
+        // For development/testing - allow demo access
+        if (window.location.hostname === 'localhost' || window.location.search.includes('demo=true')) {
+          setDemoMode(true);
+          setAuthenticated(true);
+          setShopDomain('demo-store.myshopify.com');
+        } else {
+          // Production - require shop parameter
+          setAuthenticated(false);
+          setError('No shop domain found. Please install the app from the Shopify App Store.');
+        }
       }
 
       setLoading(false);
