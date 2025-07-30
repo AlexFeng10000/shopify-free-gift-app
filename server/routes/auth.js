@@ -128,10 +128,10 @@ router.get('/callback', async (req, res) => {
     global.shopifySessions[session.shop] = session;
 
     // Redirect to app UI with success
-    const appUrl = `/app?shop=${session.shop}&installed=true`;
-    console.log(`🎯 Redirecting to app UI: ${appUrl}`);
+    console.log(`🎯 Redirecting to app UI for shop: ${session.shop}`);
     
-    res.redirect(appUrl);
+    // Redirect to the main app with shop parameter
+    res.redirect(`/?shop=${session.shop}&installed=true`);
 
   } catch (error) {
     console.error('❌ OAuth callback failed:', error);
@@ -154,13 +154,26 @@ router.get('/app', (req, res) => {
   console.log(`📊 Demo mode: ${demo ? 'Yes' : 'No'}`);
   console.log(`✅ Freshly installed: ${installed ? 'Yes' : 'No'}`);
 
-  // In production, you'd serve your React app here
-  // For now, we'll redirect to the client app
-  const clientUrl = process.env.NODE_ENV === 'production' 
-    ? '/' 
-    : 'http://localhost:3000';
+  // Serve the React app directly in production
+  if (process.env.NODE_ENV === 'production') {
+    // In production, serve the React app with query parameters
+    const queryParams = new URLSearchParams({
+      shop: shop,
+      ...(demo && { demo: demo }),
+      ...(installed && { installed: installed })
+    }).toString();
     
-  res.redirect(`${clientUrl}?shop=${shop}&demo=${demo}&installed=${installed}`);
+    res.redirect(`/?${queryParams}`);
+  } else {
+    // In development, redirect to local React server
+    const queryParams = new URLSearchParams({
+      shop: shop,
+      ...(demo && { demo: demo }),
+      ...(installed && { installed: installed })
+    }).toString();
+    
+    res.redirect(`http://localhost:3000/?${queryParams}`);
+  }
 });
 
 /**
