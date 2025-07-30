@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const database = require('./database');
 const giftRoutes = require('./routes/gifts');
+const webhookRoutes = require('./routes/webhooks');
 
 console.log('🔧 Starting Free Gift App Server...');
 
@@ -76,6 +77,9 @@ if (hasShopifyConfig) {
 
 // API Routes
 app.use('/api/gifts', giftRoutes);
+
+// Mandatory Privacy Compliance Webhooks
+app.use('/webhooks', webhookRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

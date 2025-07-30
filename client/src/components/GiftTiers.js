@@ -12,7 +12,7 @@ import {
   Select,
   Text,
   Button,
-  ButtonGroup,
+
   Icon,
   ResourceList,
   ResourceItem
