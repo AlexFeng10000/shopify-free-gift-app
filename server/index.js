@@ -92,12 +92,16 @@ app.get('/api/health', (req, res) => {
 
 // Root route - handles app installation entry point
 app.get('/', (req, res) => {
-  const { shop } = req.query;
+  const { shop, hmac, host, timestamp } = req.query;
   
   if (shop) {
-    // Redirect to authentication flow
-    console.log(`🚀 New installation request from shop: ${shop}`);
-    return res.redirect(`/auth/install?shop=${shop}`);
+    // This is a Shopify installation request - redirect to OAuth immediately
+    console.log(`🚀 Shopify installation request from shop: ${shop}`);
+    console.log(`📋 HMAC: ${hmac ? 'Present' : 'Missing'}`);
+    console.log(`🏠 Host: ${host ? 'Present' : 'Missing'}`);
+    
+    // Redirect directly to OAuth flow
+    return res.redirect(`/auth/install?shop=${shop}&hmac=${hmac || ''}&host=${host || ''}&timestamp=${timestamp || ''}`);
   }
   
   // If no shop parameter, serve the main app (for direct access)

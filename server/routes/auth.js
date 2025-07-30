@@ -8,6 +8,13 @@ const hasShopifyConfig = process.env.SHOPIFY_API_KEY &&
                         process.env.SHOPIFY_API_SECRET && 
                         process.env.SHOPIFY_API_KEY !== 'your_api_key_here';
 
+console.log('🔧 Shopify Auth Configuration:');
+console.log(`   API Key: ${process.env.SHOPIFY_API_KEY ? 'Set' : 'Missing'}`);
+console.log(`   API Secret: ${process.env.SHOPIFY_API_SECRET ? 'Set' : 'Missing'}`);
+console.log(`   App URL: ${process.env.SHOPIFY_APP_URL || 'Missing'}`);
+console.log(`   Host: ${process.env.HOST || 'Missing'}`);
+console.log(`   Has Config: ${hasShopifyConfig}`);
+
 if (hasShopifyConfig) {
   try {
     shopify = shopifyApi({
@@ -26,7 +33,10 @@ if (hasShopifyConfig) {
     console.log('✅ Shopify API initialized for authentication');
   } catch (error) {
     console.error('❌ Shopify API initialization failed:', error.message);
+    console.error('❌ Full error:', error);
   }
+} else {
+  console.log('⚠️  Running in demo mode - Shopify API not configured');
 }
 
 /**
@@ -35,7 +45,7 @@ if (hasShopifyConfig) {
  */
 router.get('/install', async (req, res) => {
   try {
-    const { shop } = req.query;
+    const { shop, hmac, host, timestamp } = req.query;
     
     if (!shop) {
       return res.status(400).send('Missing shop parameter');
@@ -47,26 +57,51 @@ router.get('/install', async (req, res) => {
     }
 
     console.log(`🔐 Starting OAuth for shop: ${shop}`);
+    console.log(`📋 Request params: hmac=${hmac ? 'present' : 'missing'}, host=${host ? 'present' : 'missing'}`);
 
     if (!shopify) {
       // Demo mode - redirect directly to app UI
       console.log('⚠️  Demo mode: Redirecting to app UI without OAuth');
-      return res.redirect(`/app?shop=${shop}&demo=true`);
+      return res.redirect(`/auth/app?shop=${shop}&demo=true`);
     }
 
-    // Generate OAuth URL
-    const authRoute = await shopify.auth.begin({
-      shop,
-      callbackPath: '/auth/callback',
-      isOnline: false, // Offline access for app functionality
-    });
+    try {
+      // Generate OAuth URL using Shopify API
+      const authRoute = await shopify.auth.begin({
+        shop: shop.replace('.myshopify.com', ''), // Remove domain suffix if present
+        callbackPath: '/auth/callback',
+        isOnline: false, // Offline access for app functionality
+      });
 
-    console.log(`🔗 Redirecting to OAuth: ${authRoute}`);
-    res.redirect(authRoute);
+      console.log(`🔗 Generated OAuth URL: ${authRoute}`);
+      console.log(`🎯 Redirecting to Shopify OAuth...`);
+      
+      // This should redirect to something like:
+      // https://admin.shopify.com/store/SHOP/app/grant?client_id=...
+      return res.redirect(authRoute);
+
+    } catch (authError) {
+      console.error('❌ OAuth URL generation failed:', authError);
+      
+      // Fallback: Manual OAuth URL construction
+      const clientId = process.env.SHOPIFY_API_KEY;
+      const redirectUri = `${process.env.SHOPIFY_APP_URL}/auth/callback`;
+      const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders';
+      const state = Math.random().toString(36).substring(7);
+      
+      const manualOAuthUrl = `https://${shop}/admin/oauth/authorize?` +
+        `client_id=${clientId}&` +
+        `scope=${encodeURIComponent(scopes)}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${state}`;
+      
+      console.log(`🔄 Fallback OAuth URL: ${manualOAuthUrl}`);
+      return res.redirect(manualOAuthUrl);
+    }
 
   } catch (error) {
     console.error('❌ OAuth initiation failed:', error);
-    res.status(500).send('Authentication failed. Please try again.');
+    res.status(500).send(`Authentication failed: ${error.message}`);
   }
 });
 
@@ -179,6 +214,53 @@ const verifySession = async (req, res, next) => {
 };
 
 /**
+ * Test OAuth URL generation
+ */
+router.get('/test-oauth', async (req, res) => {
+  const { shop } = req.query;
+  
+  if (!shop) {
+    return res.json({
+      error: 'Missing shop parameter',
+      usage: '/auth/test-oauth?shop=test.myshopify.com'
+    });
+  }
+
+  try {
+    if (!shopify) {
+      return res.json({
+        error: 'Shopify API not configured',
+        demoMode: true,
+        shop,
+        fallbackUrl: `/auth/app?shop=${shop}&demo=true`
+      });
+    }
+
+    const authRoute = await shopify.auth.begin({
+      shop: shop.replace('.myshopify.com', ''),
+      callbackPath: '/auth/callback',
+      isOnline: false,
+    });
+
+    res.json({
+      success: true,
+      shop,
+      oauthUrl: authRoute,
+      expectedPattern: 'https://admin.shopify.com/store/*/app/grant',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    res.json({
+      error: 'OAuth URL generation failed',
+      message: error.message,
+      shop,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * Health check for authentication system
  */
 router.get('/health', (req, res) => {
@@ -186,10 +268,17 @@ router.get('/health', (req, res) => {
     status: 'healthy',
     shopifyConfigured: !!shopify,
     demoMode: !shopify,
+    environment: {
+      apiKey: process.env.SHOPIFY_API_KEY ? 'Set' : 'Missing',
+      apiSecret: process.env.SHOPIFY_API_SECRET ? 'Set' : 'Missing',
+      appUrl: process.env.SHOPIFY_APP_URL || 'Missing',
+      host: process.env.HOST || 'Missing'
+    },
     routes: [
       'GET /auth/install - Start app installation',
       'GET /auth/callback - OAuth callback handler', 
       'GET /auth/app - Main app interface',
+      'GET /auth/test-oauth - Test OAuth URL generation',
       'GET /auth/health - This endpoint'
     ],
     timestamp: new Date().toISOString()
