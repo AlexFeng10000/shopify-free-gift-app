@@ -6,6 +6,7 @@ require('dotenv').config();
 const database = require('./database');
 const giftRoutes = require('./routes/gifts');
 const webhookRoutes = require('./routes/webhooks');
+const { router: authRoutes, verifySession } = require('./routes/auth');
 
 console.log('🔧 Starting Free Gift App Server...');
 
@@ -75,8 +76,11 @@ if (hasShopifyConfig) {
   console.log('💡 Update server/.env with your Shopify API credentials');
 }
 
-// API Routes
-app.use('/api/gifts', giftRoutes);
+// Authentication Routes (must come first)
+app.use('/auth', authRoutes);
+
+// API Routes (protected by authentication)
+app.use('/api/gifts', verifySession, giftRoutes);
 
 // Mandatory Privacy Compliance Webhooks
 app.use('/webhooks', webhookRoutes);
@@ -86,11 +90,40 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Free Gift App Server Running' });
 });
 
+// Root route - handles app installation entry point
+app.get('/', (req, res) => {
+  const { shop } = req.query;
+  
+  if (shop) {
+    // Redirect to authentication flow
+    console.log(`🚀 New installation request from shop: ${shop}`);
+    return res.redirect(`/auth/install?shop=${shop}`);
+  }
+  
+  // If no shop parameter, serve the main app (for direct access)
+  if (process.env.NODE_ENV === 'production') {
+    return res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  } else {
+    return res.json({
+      message: 'Gift Booster - Multi-Tier Gift with Purchase App',
+      status: 'running',
+      environment: 'development',
+      installUrl: '/?shop=your-store.myshopify.com',
+      authFlow: '/auth/install?shop=your-store.myshopify.com'
+    });
+  }
+});
+
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
   
+  // Catch-all handler for React Router (but not for API routes)
   app.get('*', (req, res) => {
+    // Don't serve React app for API routes
+    if (req.path.startsWith('/api/') || req.path.startsWith('/auth/') || req.path.startsWith('/webhooks/')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
