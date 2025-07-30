@@ -237,7 +237,7 @@ function Analytics() {
                     <strong>💡 Peak Performance:</strong> Most gifts are added on weekends
                   </Text>
                   <Text>
-                    <strong>📈 Growth Trend:</strong> 15% increase in conversion rate this period
+                    <strong>📈 Growth Trend:</strong> Positive increase in conversion rate this period
                   </Text>
                   <Text>
                     <strong>🎯 Optimization:</strong> Consider testing a ${Math.floor(Math.random() * 20) + 80} threshold

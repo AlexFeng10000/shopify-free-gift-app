@@ -20,7 +20,7 @@ Unlike basic single-threshold apps, Gift Booster enables unlimited gift tiers th
 ✅ Real-Time Performance Tracking - Data-driven optimization capabilities
 
 📈 PROVEN RESULTS:
-Multi-tier gift strategies typically increase average order value by 35-50% compared to single-threshold systems, while improving customer satisfaction through gamified shopping experiences.
+Multi-tier gift strategies help increase average order value compared to single-threshold systems, while improving customer satisfaction through gamified shopping experiences.
 
 🎯 PERFECT FOR MERCHANTS WHO WANT TO:
 • Increase average order value systematically
@@ -64,7 +64,7 @@ Professional demonstration of Gift Booster, an advanced gift-with-purchase app f
 ✅ Professional Shopify Polaris interface
 ✅ Mobile-responsive design
 
-📈 RESULTS: 35-50% average order value increase
+📈 RESULTS: Helps increase average order value
 
 Unlike basic gift apps, Gift Booster offers sophisticated multi-tier strategies that create powerful incentives for higher spending while providing detailed performance insights for optimization.
 
@@ -99,7 +99,7 @@ Gift Booster - Unlimited Gift Tiers App for Shopify (Official Demo)
 
 If you create a custom thumbnail, include:
 - "Multi-Tier Gift System"
-- "35-50% AOV Increase"  
+- "Increase AOV"  
 - "Shopify App Demo"
 - Your app logo/name
 

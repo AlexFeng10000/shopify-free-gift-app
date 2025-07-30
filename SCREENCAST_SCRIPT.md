@@ -84,7 +84,7 @@
 5. Demonstrate easy tier activation/deactivation
 
 **Narration**:
-"The results speak for themselves. Multi-tier gift strategies typically increase average order value by 35-50% compared to single-threshold systems. Customers love the progressive rewards, merchants see higher revenue, and the gamified experience increases customer satisfaction. The system works perfectly on mobile devices and can be adjusted in real-time based on performance data."
+"The results speak for themselves. Multi-tier gift strategies help increase average order value compared to single-threshold systems. Customers love the progressive rewards, merchants see higher revenue, and the gamified experience increases customer satisfaction. The system works perfectly on mobile devices and can be adjusted in real-time based on performance data."
 
 ### Closing (30 seconds)
 **Screen**: Dashboard overview showing all active tiers
@@ -160,7 +160,7 @@
 - ✅ **Professional UI** - Clean, modern Shopify Polaris design
 
 ### **Business Impact:**
-- 📈 **35-50% AOV Increase** - Proven results from multi-tier strategy
+- 📈 **AOV Increase** - Multi-tier strategy helps boost revenue
 - 🎯 **Higher Conversion Rates** - More opportunities to qualify for gifts
 - 💰 **Revenue Optimization** - Data-driven tier adjustments
 - 😊 **Customer Satisfaction** - Gamified shopping experience

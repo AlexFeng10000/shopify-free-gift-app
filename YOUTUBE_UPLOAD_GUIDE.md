@@ -48,7 +48,7 @@ Key Features Shown:
 ✅ Easy tier management interface
 ✅ Mobile-responsive design
 
-Unlike basic single-threshold apps, Gift Booster offers unlimited gift tiers that reward customers at multiple spending levels, typically increasing AOV by 35-50%.
+Unlike basic single-threshold apps, Gift Booster offers unlimited gift tiers that reward customers at multiple spending levels, helping to increase AOV.
 
 Perfect for Shopify merchants looking to:
 - Increase average order value
