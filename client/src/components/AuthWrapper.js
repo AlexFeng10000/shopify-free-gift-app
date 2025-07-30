@@ -52,7 +52,9 @@ function AuthWrapper({ children }) {
         }
       } else {
         // For development/testing - allow demo access
-        if (window.location.hostname === 'localhost' || window.location.search.includes('demo=true')) {
+        if (window.location.hostname === 'localhost' || 
+            window.location.search.includes('demo=true') ||
+            window.location.hash.includes('demo')) {
           setDemoMode(true);
           setAuthenticated(true);
           setShopDomain('demo-store.myshopify.com');
@@ -76,6 +78,10 @@ function AuthWrapper({ children }) {
     if (shop) {
       window.location.href = `/auth/install?shop=${shop}`;
     }
+  };
+
+  const handleDemoMode = () => {
+    window.location.href = '/?demo=true';
   };
 
   if (loading) {
@@ -112,9 +118,14 @@ function AuthWrapper({ children }) {
                 <Text>2. Search for "Gift Booster"</Text>
                 <Text>3. Click "Add app" to install</Text>
                 <Text>4. You'll be redirected here automatically</Text>
-                <Button primary onClick={handleInstallApp}>
-                  Install App Manually
-                </Button>
+                <Stack distribution="fillEvenly">
+                  <Button primary onClick={handleInstallApp}>
+                    Install App Manually
+                  </Button>
+                  <Button onClick={handleDemoMode}>
+                    Try Demo Mode
+                  </Button>
+                </Stack>
               </Stack>
             </Card>
           </Layout.Section>
@@ -132,9 +143,14 @@ function AuthWrapper({ children }) {
               <Stack vertical spacing="loose">
                 <Text variation="strong">Welcome to Gift Booster!</Text>
                 <Text>Please install the app from the Shopify App Store to get started.</Text>
-                <Button primary onClick={handleInstallApp}>
-                  Install App
-                </Button>
+                <Stack distribution="fillEvenly">
+                  <Button primary onClick={handleInstallApp}>
+                    Install App
+                  </Button>
+                  <Button onClick={handleDemoMode}>
+                    Try Demo Mode
+                  </Button>
+                </Stack>
               </Stack>
             </Card>
           </Layout.Section>
