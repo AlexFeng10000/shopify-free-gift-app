@@ -65,39 +65,27 @@ router.get('/install', async (req, res) => {
       return res.redirect(`/auth/app?shop=${shop}&demo=true`);
     }
 
-    try {
-      // Generate OAuth URL using Shopify API
-      const authRoute = await shopify.auth.begin({
-        shop: shop.replace('.myshopify.com', ''), // Remove domain suffix if present
-        callbackPath: '/auth/callback',
-        isOnline: false, // Offline access for app functionality
-      });
-
-      console.log(`🔗 Generated OAuth URL: ${authRoute}`);
-      console.log(`🎯 Redirecting to Shopify OAuth...`);
-      
-      // This should redirect to something like:
-      // https://admin.shopify.com/store/SHOP/app/grant?client_id=...
-      return res.redirect(authRoute);
-
-    } catch (authError) {
-      console.error('❌ OAuth URL generation failed:', authError);
-      
-      // Fallback: Manual OAuth URL construction
-      const clientId = process.env.SHOPIFY_API_KEY;
-      const redirectUri = `${process.env.SHOPIFY_APP_URL}/auth/callback`;
-      const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders';
-      const state = Math.random().toString(36).substring(7);
-      
-      const manualOAuthUrl = `https://${shop}/admin/oauth/authorize?` +
-        `client_id=${clientId}&` +
-        `scope=${encodeURIComponent(scopes)}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `state=${state}`;
-      
-      console.log(`🔄 Fallback OAuth URL: ${manualOAuthUrl}`);
-      return res.redirect(manualOAuthUrl);
-    }
+    // Use manual OAuth URL construction (more reliable)
+    const clientId = process.env.SHOPIFY_API_KEY;
+    const redirectUri = `${process.env.SHOPIFY_APP_URL}/auth/callback`;
+    const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders';
+    const state = Math.random().toString(36).substring(7);
+    
+    // Ensure shop domain is clean
+    const cleanShop = shop.replace('.myshopify.com', '');
+    
+    const oauthUrl = `https://${cleanShop}.myshopify.com/admin/oauth/authorize?` +
+      `client_id=${clientId}&` +
+      `scope=${encodeURIComponent(scopes)}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `state=${state}`;
+    
+    console.log(`🔗 Generated OAuth URL: ${oauthUrl}`);
+    console.log(`🎯 Redirecting to Shopify OAuth...`);
+    
+    // This should redirect to something like:
+    // https://uvszh1-m5.myshopify.com/admin/oauth/authorize?client_id=...
+    return res.redirect(oauthUrl);
 
   } catch (error) {
     console.error('❌ OAuth initiation failed:', error);
@@ -236,17 +224,32 @@ router.get('/test-oauth', async (req, res) => {
       });
     }
 
-    const authRoute = await shopify.auth.begin({
-      shop: shop.replace('.myshopify.com', ''),
-      callbackPath: '/auth/callback',
-      isOnline: false,
-    });
+    // Generate OAuth URL manually (same as install route)
+    const clientId = process.env.SHOPIFY_API_KEY;
+    const redirectUri = `${process.env.SHOPIFY_APP_URL}/auth/callback`;
+    const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders';
+    const state = Math.random().toString(36).substring(7);
+    
+    const cleanShop = shop.replace('.myshopify.com', '');
+    
+    const oauthUrl = `https://${cleanShop}.myshopify.com/admin/oauth/authorize?` +
+      `client_id=${clientId}&` +
+      `scope=${encodeURIComponent(scopes)}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `state=${state}`;
 
     res.json({
       success: true,
       shop,
-      oauthUrl: authRoute,
-      expectedPattern: 'https://admin.shopify.com/store/*/app/grant',
+      cleanShop,
+      oauthUrl,
+      expectedPattern: 'https://SHOP.myshopify.com/admin/oauth/authorize',
+      environment: {
+        clientId: clientId ? 'Set' : 'Missing',
+        redirectUri,
+        scopes,
+        appUrl: process.env.SHOPIFY_APP_URL
+      },
       timestamp: new Date().toISOString()
     });
 
