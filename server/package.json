@@ -1,7 +1,7 @@
 {
-  "name": "shopify-free-gift-server",
+  "name": "gift-booster-server",
   "version": "1.0.0",
-  "description": "Backend server for Shopify Free Gift App",
+  "description": "Backend server for Gift Booster App",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",

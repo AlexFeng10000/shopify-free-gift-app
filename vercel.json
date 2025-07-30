@@ -1,4 +1,5 @@
 {
+  "name": "gift-booster-app",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "client/build",
   "framework": "create-react-app",

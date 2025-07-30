@@ -1,5 +1,5 @@
 {
-  "name": "shopify-free-gift-app",
+  "name": "gift-booster-app",
   "version": "1.0.0",
   "description": "Auto Free Gift Adder for Shopify stores",
   "main": "server/index.js",
