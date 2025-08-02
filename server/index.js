@@ -85,10 +85,10 @@ app.get('/', (req, res) => {
     console.log(`📂 Build path: ${path.join(__dirname, '../client/build', 'index.html')}`);
     
     if (process.env.NODE_ENV === 'production') {
-      // Temporarily serve test page instead of React app
-      const testPath = path.join(__dirname, '../client/public', 'test.html');
-      console.log(`📄 Serving test page from: ${testPath}`);
-      return res.sendFile(testPath);
+      // Serve the React app dashboard
+      const appPath = path.join(__dirname, 'public', 'index.html');
+      console.log(`📄 Serving React app from: ${appPath}`);
+      return res.sendFile(appPath);
     } else {
       return res.json({
         message: 'Gift Booster - Multi-Tier Gift with Purchase App',
@@ -116,10 +116,10 @@ app.get('/', (req, res) => {
   console.log(`📁 NODE_ENV: ${process.env.NODE_ENV}`);
   
   if (process.env.NODE_ENV === 'production') {
-    // Temporarily serve test page instead of React app
-    const testPath = path.join(__dirname, '../client/public', 'test.html');
-    console.log(`📄 Serving test page from: ${testPath}`);
-    return res.sendFile(testPath);
+    // Serve the React app for direct access
+    const appPath = path.join(__dirname, 'public', 'index.html');
+    console.log(`📄 Serving React app from: ${appPath}`);
+    return res.sendFile(appPath);
   } else {
     return res.json({
       message: 'Gift Booster - Multi-Tier Gift with Purchase App',
@@ -133,7 +133,7 @@ app.get('/', (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
+  app.use(express.static(path.join(__dirname, 'public')));
   
   // Catch-all handler for React Router (but not for API routes)
   app.get('*', (req, res) => {
@@ -141,7 +141,7 @@ if (process.env.NODE_ENV === 'production') {
     if (req.path.startsWith('/api/') || req.path.startsWith('/auth/') || req.path.startsWith('/webhooks/')) {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 }
 
