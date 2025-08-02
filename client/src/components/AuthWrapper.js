@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-// App Bridge integration
+// App Bridge integration - Official Shopify CDN
 let AppBridge;
-if (typeof window !== 'undefined' && window.ShopifyAppBridge) {
-  AppBridge = window.ShopifyAppBridge;
+if (typeof window !== 'undefined') {
+  // Try multiple possible App Bridge locations
+  AppBridge = window.ShopifyAppBridge || window.shopify || window.Shopify?.AppBridge;
 }
 
 const AuthWrapper = ({ children }) => {
@@ -24,10 +25,13 @@ const AuthWrapper = ({ children }) => {
       const installed = urlParams.get('installed');
       const host = urlParams.get('host');
 
-      // Initialize App Bridge if we have shop and host parameters
+      // Initialize App Bridge v4 if we have shop and host parameters
       if (shop && host && AppBridge && !appBridge) {
         console.log('🔗 Initializing App Bridge v4...');
+        console.log('🔍 Available AppBridge methods:', Object.keys(AppBridge || {}));
+        
         try {
+          // App Bridge v4 initialization
           const app = AppBridge.createApp({
             apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
             host: host,
@@ -35,22 +39,61 @@ const AuthWrapper = ({ children }) => {
           });
           
           setAppBridge(app);
-          console.log('✅ App Bridge initialized successfully');
+          console.log('✅ App Bridge v4 initialized successfully');
+          console.log('🔍 App methods:', Object.keys(app || {}));
           
-          // Initialize session token authentication
-          if (app.idToken) {
+          // App Bridge v4 session token handling
+          if (app && typeof app.idToken === 'function') {
+            console.log('🔑 Attempting to get session token...');
             app.idToken().then((token) => {
               console.log('✅ Session token obtained via idToken()');
+              console.log('🎫 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
               setSessionToken(token);
+              
+              // Use session token for authenticated requests
+              if (token) {
+                // Store token for API requests
+                window.sessionToken = token;
+                console.log('💾 Session token stored globally');
+              }
             }).catch((error) => {
               console.log('⚠️ Session token failed:', error);
+              
+              // Fallback: try alternative session token methods
+              if (app.getState) {
+                console.log('🔄 Trying alternative session token method...');
+                try {
+                  const state = app.getState();
+                  console.log('📊 App state:', state);
+                } catch (stateError) {
+                  console.log('⚠️ App state failed:', stateError);
+                }
+              }
             });
           } else {
-            console.log('⚠️ idToken method not available, using legacy approach');
+            console.log('⚠️ idToken method not available on app object');
+            console.log('🔍 Available app methods:', Object.keys(app || {}));
           }
           
         } catch (error) {
           console.log('⚠️ App Bridge initialization failed:', error);
+          console.log('🔍 Error details:', error.message);
+          
+          // Try alternative App Bridge detection
+          if (window.ShopifyAppBridge) {
+            console.log('🔄 Trying legacy App Bridge...');
+            try {
+              const legacyApp = window.ShopifyAppBridge.createApp({
+                apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
+                host: host,
+                forceRedirect: true
+              });
+              setAppBridge(legacyApp);
+              console.log('✅ Legacy App Bridge initialized');
+            } catch (legacyError) {
+              console.log('⚠️ Legacy App Bridge also failed:', legacyError);
+            }
+          }
         }
       }
 
