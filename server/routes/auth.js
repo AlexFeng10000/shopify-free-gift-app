@@ -3,6 +3,9 @@ const { shopifyApi, LATEST_API_VERSION } = require('@shopify/shopify-api');
 require('@shopify/shopify-api/adapters/node');
 const router = express.Router();
 
+// For Node.js versions that don't have fetch built-in
+const fetch = globalThis.fetch || require('node-fetch');
+
 // Initialize Shopify API if credentials are available
 let shopify = null;
 const hasShopifyConfig = process.env.SHOPIFY_API_KEY && 
@@ -121,25 +124,49 @@ router.get('/callback', async (req, res) => {
       return res.redirect(`/app?shop=${shop}&demo=true&installed=true`);
     }
 
-    // Complete OAuth flow
-    const session = await shopify.auth.callback({
-      rawRequest: req,
-      rawResponse: res,
+    // Manual OAuth token exchange
+    const tokenUrl = `https://${shop}/admin/oauth/access_token`;
+    const tokenData = {
+      client_id: process.env.SHOPIFY_API_KEY,
+      client_secret: process.env.SHOPIFY_API_SECRET,
+      code: code
+    };
+
+    console.log(`🔄 Exchanging code for access token...`);
+
+    // Exchange authorization code for access token
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tokenData)
     });
 
-    console.log(`✅ OAuth completed for shop: ${session.shop}`);
-    console.log(`🔑 Access token obtained: ${session.accessToken ? 'Yes' : 'No'}`);
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${response.status} ${response.statusText}`);
+    }
+
+    const tokenResponse = await response.json();
+    console.log(`✅ OAuth completed for shop: ${shop}`);
+    console.log(`🔑 Access token obtained: ${tokenResponse.access_token ? 'Yes' : 'No'}`);
 
     // Store session data (in production, use proper session storage)
-    // For now, we'll use a simple in-memory store
+    const session = {
+      shop: shop,
+      accessToken: tokenResponse.access_token,
+      scope: tokenResponse.scope,
+      timestamp: new Date().toISOString()
+    };
+
     global.shopifySessions = global.shopifySessions || {};
-    global.shopifySessions[session.shop] = session;
+    global.shopifySessions[shop] = session;
 
     // Redirect to app UI with success
-    console.log(`🎯 Redirecting to app UI for shop: ${session.shop}`);
+    console.log(`🎯 Redirecting to app UI for shop: ${shop}`);
     
     // Redirect to the main app with shop parameter
-    res.redirect(`/?shop=${session.shop}&installed=true`);
+    res.redirect(`/?shop=${shop}&installed=true`);
 
   } catch (error) {
     console.error('❌ OAuth callback failed:', error);
