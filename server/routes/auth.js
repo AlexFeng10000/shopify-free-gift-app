@@ -1,5 +1,7 @@
 const express = require('express');
 const { shopifyApi, LATEST_API_VERSION } = require('@shopify/shopify-api');
+const { restResources } = require('@shopify/shopify-api/rest/admin/2023-10');
+require('@shopify/shopify-api/adapters/node');
 const router = express.Router();
 
 // Initialize Shopify API if credentials are available
@@ -24,6 +26,7 @@ if (hasShopifyConfig) {
       hostName: process.env.HOST || 'localhost:5000',
       apiVersion: LATEST_API_VERSION,
       isEmbeddedApp: true,
+      restResources,
       logger: {
         level: 'info',
         httpRequests: true,

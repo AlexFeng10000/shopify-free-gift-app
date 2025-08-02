@@ -42,6 +42,7 @@ if (hasShopifyConfig) {
   try {
     const { shopifyApi, LATEST_API_VERSION } = require('@shopify/shopify-api');
     const { shopifyApp } = require('@shopify/shopify-app-express');
+    require('@shopify/shopify-api/adapters/node');
 
     // Configure Shopify API
     const shopify = shopifyApi({
@@ -51,6 +52,7 @@ if (hasShopifyConfig) {
       hostName: process.env.HOST || 'localhost:5000',
       apiVersion: LATEST_API_VERSION,
       isEmbeddedApp: true,
+      userAgentPrefix: 'Gift-Booster-App',
     });
 
     // Shopify app middleware
