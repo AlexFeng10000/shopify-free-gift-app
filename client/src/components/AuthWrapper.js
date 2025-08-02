@@ -26,7 +26,7 @@ const AuthWrapper = ({ children }) => {
 
       // Initialize App Bridge if we have shop and host parameters
       if (shop && host && AppBridge && !appBridge) {
-        console.log('🔗 Initializing App Bridge...');
+        console.log('🔗 Initializing App Bridge v4...');
         try {
           const app = AppBridge.createApp({
             apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
@@ -35,13 +35,20 @@ const AuthWrapper = ({ children }) => {
           });
           
           setAppBridge(app);
+          console.log('✅ App Bridge initialized successfully');
           
-          // Get session token for authentication
-          const sessionTokens = AppBridge.authenticatedFetch(app);
-          if (sessionTokens) {
-            console.log('✅ Session token obtained');
-            setSessionToken(sessionTokens);
+          // Initialize session token authentication
+          if (app.idToken) {
+            app.idToken().then((token) => {
+              console.log('✅ Session token obtained via idToken()');
+              setSessionToken(token);
+            }).catch((error) => {
+              console.log('⚠️ Session token failed:', error);
+            });
+          } else {
+            console.log('⚠️ idToken method not available, using legacy approach');
           }
+          
         } catch (error) {
           console.log('⚠️ App Bridge initialization failed:', error);
         }
