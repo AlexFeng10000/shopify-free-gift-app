@@ -47,11 +47,17 @@ if (hasShopifyConfig) {
     // Configure Shopify API
     // Ensure scopes are properly formatted
     const scopesString = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders,write_draft_orders';
-    const scopesArray = scopesString.split(',').map(scope => scope.trim());
+    const scopesArray = scopesString.split(',').map(scope => scope.trim()).filter(scope => scope.length > 0);
     
-    console.log(`🔧 Server Shopify API - Scopes: [${scopesArray.join(', ')}]`);
+    console.log(`🔧 Server Shopify API Configuration:`);
+    console.log(`   API Key: ${process.env.SHOPIFY_API_KEY ? 'Set' : 'Missing'}`);
+    console.log(`   API Secret: ${process.env.SHOPIFY_API_SECRET ? 'Set' : 'Missing'}`);
+    console.log(`   Scopes String: "${scopesString}"`);
+    console.log(`   Scopes Array: [${scopesArray.join(', ')}]`);
+    console.log(`   Scopes Length: ${scopesArray.length}`);
+    console.log(`   Host: ${process.env.HOST || 'localhost:5000'}`);
     
-    const shopify = shopifyApi({
+    const shopifyConfig = {
       apiKey: process.env.SHOPIFY_API_KEY,
       apiSecretKey: process.env.SHOPIFY_API_SECRET,
       scopes: scopesArray,
@@ -59,7 +65,11 @@ if (hasShopifyConfig) {
       apiVersion: LATEST_API_VERSION,
       isEmbeddedApp: true,
       userAgentPrefix: 'Gift-Booster-App',
-    });
+    };
+    
+    console.log(`🔧 Final Shopify Config:`, JSON.stringify(shopifyConfig, null, 2));
+    
+    const shopify = shopifyApi(shopifyConfig);
 
     // Shopify app middleware
     const shopifyAppMiddleware = shopifyApp({
