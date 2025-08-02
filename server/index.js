@@ -37,58 +37,9 @@ const hasShopifyConfig = process.env.SHOPIFY_API_KEY &&
                         process.env.SHOPIFY_API_KEY !== 'your_api_key_here';
 
 if (hasShopifyConfig) {
-  console.log('🔑 Shopify credentials found, initializing Shopify integration...');
-  
-  try {
-    const { shopifyApi, LATEST_API_VERSION } = require('@shopify/shopify-api');
-    const { shopifyApp } = require('@shopify/shopify-app-express');
-    require('@shopify/shopify-api/adapters/node');
-
-    // Configure Shopify API
-    // Ensure scopes are properly formatted
-    const scopesString = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders,write_draft_orders';
-    const scopesArray = scopesString.split(',').map(scope => scope.trim()).filter(scope => scope.length > 0);
-    
-    console.log(`🔧 Server Shopify API Configuration:`);
-    console.log(`   API Key: ${process.env.SHOPIFY_API_KEY ? 'Set' : 'Missing'}`);
-    console.log(`   API Secret: ${process.env.SHOPIFY_API_SECRET ? 'Set' : 'Missing'}`);
-    console.log(`   Scopes String: "${scopesString}"`);
-    console.log(`   Scopes Array: [${scopesArray.join(', ')}]`);
-    console.log(`   Scopes Length: ${scopesArray.length}`);
-    console.log(`   Host: ${process.env.HOST || 'localhost:5000'}`);
-    
-    const shopifyConfig = {
-      apiKey: process.env.SHOPIFY_API_KEY,
-      apiSecretKey: process.env.SHOPIFY_API_SECRET,
-      scopes: scopesArray,
-      hostName: process.env.HOST || 'localhost:5000',
-      apiVersion: LATEST_API_VERSION,
-      isEmbeddedApp: true,
-      userAgentPrefix: 'Gift-Booster-App',
-    };
-    
-    console.log(`🔧 Final Shopify Config:`, JSON.stringify(shopifyConfig, null, 2));
-    
-    const shopify = shopifyApi(shopifyConfig);
-
-    // Shopify app middleware
-    const shopifyAppMiddleware = shopifyApp({
-      api: shopify,
-      auth: {
-        path: '/api/auth',
-        callbackPath: '/api/auth/callback',
-      },
-      webhooks: {
-        path: '/api/webhooks',
-      },
-    });
-
-    app.use(shopifyAppMiddleware);
-    console.log('✅ Shopify integration initialized');
-  } catch (error) {
-    console.error('❌ Shopify integration failed:', error.message);
-    console.log('⚠️  Running in demo mode without Shopify integration');
-  }
+  console.log('🔑 Shopify credentials found');
+  console.log('✅ Using custom auth routes (auth.js) for Shopify integration');
+  console.log('⚠️  Skipping shopify-app-express middleware to avoid conflicts');
 } else {
   console.log('⚠️  Shopify credentials not configured - running in demo mode');
   console.log('💡 Update server/.env with your Shopify API credentials');
