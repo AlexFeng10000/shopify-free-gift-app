@@ -14,14 +14,21 @@ console.log(`   API Key: ${process.env.SHOPIFY_API_KEY ? 'Set' : 'Missing'}`);
 console.log(`   API Secret: ${process.env.SHOPIFY_API_SECRET ? 'Set' : 'Missing'}`);
 console.log(`   App URL: ${process.env.SHOPIFY_APP_URL || 'Missing'}`);
 console.log(`   Host: ${process.env.HOST || 'Missing'}`);
+console.log(`   Scopes Raw: ${process.env.SHOPIFY_SCOPES || 'Missing'}`);
 console.log(`   Has Config: ${hasShopifyConfig}`);
 
 if (hasShopifyConfig) {
   try {
+    // Ensure scopes are properly formatted
+    const scopesString = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders,write_draft_orders';
+    const scopesArray = scopesString.split(',').map(scope => scope.trim());
+    
+    console.log(`   Scopes Array: [${scopesArray.join(', ')}]`);
+    
     shopify = shopifyApi({
       apiKey: process.env.SHOPIFY_API_KEY,
       apiSecretKey: process.env.SHOPIFY_API_SECRET,
-      scopes: process.env.SHOPIFY_SCOPES?.split(',') || ['read_products', 'write_products', 'read_orders'],
+      scopes: scopesArray,
       hostName: process.env.HOST || 'localhost:5000',
       apiVersion: LATEST_API_VERSION,
       isEmbeddedApp: true,
