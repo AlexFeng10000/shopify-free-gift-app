@@ -17,6 +17,13 @@ const AuthWrapper = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      // Debug: Check what's available
+      console.log('🔍 Window globals check:');
+      console.log('  ShopifyAppBridge:', typeof window.ShopifyAppBridge);
+      console.log('  shopify:', typeof window.shopify);
+      console.log('  Shopify:', typeof window.Shopify);
+      console.log('  AppBridge variable:', typeof AppBridge);
+      
       // Get shop from URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
@@ -24,6 +31,12 @@ const AuthWrapper = ({ children }) => {
       const demo = urlParams.get('demo');
       const installed = urlParams.get('installed');
       const host = urlParams.get('host');
+      
+      console.log('🔍 URL Parameters:');
+      console.log('  shop:', shop);
+      console.log('  host:', host);
+      console.log('  demo:', demo);
+      console.log('  installed:', installed);
 
       // Initialize App Bridge v4 if we have shop and host parameters
       if (shop && host && AppBridge && !appBridge) {
