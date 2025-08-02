@@ -17,12 +17,22 @@ const AuthWrapper = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      // Debug: Confirm React app is running
+      console.log('🚀 Gift Booster App - AuthWrapper initialized');
+      console.log('📍 Current URL:', window.location.href);
+      console.log('🕐 Timestamp:', new Date().toISOString());
+      
       // Debug: Check what's available
       console.log('🔍 Window globals check:');
       console.log('  ShopifyAppBridge:', typeof window.ShopifyAppBridge);
       console.log('  shopify:', typeof window.shopify);
       console.log('  Shopify:', typeof window.Shopify);
       console.log('  AppBridge variable:', typeof AppBridge);
+      
+      // Debug: Check if we're in an iframe (embedded context)
+      console.log('🖼️ Embedded context check:');
+      console.log('  In iframe:', window !== window.top);
+      console.log('  Parent origin:', window !== window.top ? document.referrer : 'Not in iframe');
       
       // Get shop from URL parameters
       const urlParams = new URLSearchParams(window.location.search);
@@ -38,8 +48,16 @@ const AuthWrapper = ({ children }) => {
       console.log('  demo:', demo);
       console.log('  installed:', installed);
 
-      // Initialize App Bridge v4 if we have shop and host parameters
-      if (shop && host && AppBridge && !appBridge) {
+      // Initialize App Bridge v4 if we have shop and AppBridge is available
+      if (shop && AppBridge && !appBridge) {
+        // If no host parameter, try to get it from the embedded context
+        let hostParam = host;
+        if (!hostParam && window !== window.top) {
+          // We're in an iframe, try to construct host from shop domain
+          const shopDomain = shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
+          hostParam = btoa(shopDomain).replace(/=/g, '');
+          console.log('🔧 Generated host parameter:', hostParam);
+        }
         console.log('🔗 Initializing App Bridge v4...');
         console.log('🔍 Available AppBridge methods:', Object.keys(AppBridge || {}));
         
@@ -47,7 +65,7 @@ const AuthWrapper = ({ children }) => {
           // App Bridge v4 initialization
           const app = AppBridge.createApp({
             apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
-            host: host,
+            host: hostParam,
             forceRedirect: true
           });
           
