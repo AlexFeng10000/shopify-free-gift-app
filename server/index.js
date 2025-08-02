@@ -90,12 +90,50 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Free Gift App Server Running' });
 });
 
+// Test endpoint to debug OAuth issues
+app.get('/test', (req, res) => {
+  const { shop, installed, demo } = req.query;
+  res.json({
+    message: 'Test endpoint working',
+    query: req.query,
+    shop: shop,
+    installed: installed,
+    demo: demo,
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Root route - handles app installation entry point
 app.get('/', (req, res) => {
-  const { shop, hmac, host, timestamp } = req.query;
+  const { shop, hmac, host, timestamp, installed, demo } = req.query;
   
-  if (shop) {
-    // This is a Shopify installation request - redirect to OAuth immediately
+  // If this is a post-OAuth redirect (has shop + installed), serve the app
+  if (shop && (installed || demo)) {
+    console.log(`✅ Post-OAuth app access for shop: ${shop}`);
+    console.log(`🎯 Installed: ${installed ? 'Yes' : 'No'}, Demo: ${demo ? 'Yes' : 'No'}`);
+    console.log(`📁 NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`📂 Build path: ${path.join(__dirname, '../client/build', 'index.html')}`);
+    
+    if (process.env.NODE_ENV === 'production') {
+      // Temporarily serve test page instead of React app
+      const testPath = path.join(__dirname, '../client/public', 'test.html');
+      console.log(`📄 Serving test page from: ${testPath}`);
+      return res.sendFile(testPath);
+    } else {
+      return res.json({
+        message: 'Gift Booster - Multi-Tier Gift with Purchase App',
+        status: 'authenticated',
+        shop: shop,
+        installed: installed,
+        demo: demo,
+        environment: 'development'
+      });
+    }
+  }
+  
+  // If shop parameter but no installed flag, this is a fresh installation request
+  if (shop && !installed && !demo) {
     console.log(`🚀 Shopify installation request from shop: ${shop}`);
     console.log(`📋 HMAC: ${hmac ? 'Present' : 'Missing'}`);
     console.log(`🏠 Host: ${host ? 'Present' : 'Missing'}`);
@@ -105,8 +143,14 @@ app.get('/', (req, res) => {
   }
   
   // If no shop parameter, serve the main app (for direct access)
+  console.log(`🏠 No shop parameter - serving main app`);
+  console.log(`📁 NODE_ENV: ${process.env.NODE_ENV}`);
+  
   if (process.env.NODE_ENV === 'production') {
-    return res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    // Temporarily serve test page instead of React app
+    const testPath = path.join(__dirname, '../client/public', 'test.html');
+    console.log(`📄 Serving test page from: ${testPath}`);
+    return res.sendFile(testPath);
   } else {
     return res.json({
       message: 'Gift Booster - Multi-Tier Gift with Purchase App',

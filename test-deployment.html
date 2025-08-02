@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Deployment</title>
+</head>
+<body>
+    <h1>Testing New Deployment</h1>
+    <p>Testing URLs:</p>
+    <ul>
+        <li><a href="https://gift-booster-dbk9cpny2-alexfeng10000s-projects.vercel.app/" target="_blank">Main App</a></li>
+        <li><a href="https://gift-booster-dbk9cpny2-alexfeng10000s-projects.vercel.app/?shop=test.myshopify.com&hmac=test123&timestamp=123456" target="_blank">Installation Test</a></li>
+        <li><a href="https://gift-booster-dbk9cpny2-alexfeng10000s-projects.vercel.app/auth/callback" target="_blank">OAuth Callback (no params)</a></li>
+        <li><a href="https://gift-booster-dbk9cpny2-alexfeng10000s-projects.vercel.app/auth/callback?code=test123&shop=test.myshopify.com&state=teststate" target="_blank">OAuth Callback (with params)</a></li>
+    </ul>
+    
+    <h2>Expected Results:</h2>
+    <ol>
+        <li>Main App - Should show React app interface</li>
+        <li>Installation Test - Should redirect to OAuth or show installation page</li>
+        <li>OAuth Callback (no params) - Should show error message</li>
+        <li>OAuth Callback (with params) - Should redirect to main app</li>
+    </ol>
+</body>
+</html>

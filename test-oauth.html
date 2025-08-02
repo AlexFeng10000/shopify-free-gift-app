@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Flow Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a87; }
+        input { padding: 8px; width: 300px; margin: 5px; }
+        .url-box { background: white; padding: 10px; border: 1px solid #ddd; word-break: break-all; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔐 OAuth Flow Tester</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Test OAuth URL Generation</h2>
+        <p>Enter your test store name (without .myshopify.com):</p>
+        <input type="text" id="shopName" placeholder="your-test-store" value="">
+        <button onclick="generateOAuthURL()">Generate OAuth URL</button>
+        
+        <div id="oauthResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 2: Test App Installation</h2>
+        <p>Click this button to test the install flow:</p>
+        <button onclick="testInstall()">Test Install Flow</button>
+        
+        <div id="installResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 3: Check App Health</h2>
+        <button onclick="checkHealth()">Check App Health</button>
+        
+        <div id="healthResult"></div>
+    </div>
+
+    <script>
+        const APP_URL = 'https://gift-booster-d6uyc81rq-alexfeng10000s-projects.vercel.app';
+        
+        function generateOAuthURL() {
+            const shopName = document.getElementById('shopName').value.trim();
+            if (!shopName) {
+                document.getElementById('oauthResult').innerHTML = '<p class="error">Please enter a shop name</p>';
+                return;
+            }
+            
+            const installURL = `${APP_URL}/auth/install?shop=${shopName}.myshopify.com`;
+            const testURL = `${APP_URL}/auth/test-oauth?shop=${shopName}.myshopify.com`;
+            
+            document.getElementById('oauthResult').innerHTML = `
+                <h3>Generated URLs:</h3>
+                <p><strong>Install URL:</strong></p>
+                <div class="url-box">${installURL}</div>
+                <button onclick="window.open('${installURL}', '_blank')">Test Install URL</button>
+                
+                <p><strong>Test OAuth URL:</strong></p>
+                <div class="url-box">${testURL}</div>
+                <button onclick="testOAuthGeneration('${shopName}')">Test OAuth Generation</button>
+            `;
+        }
+        
+        async function testOAuthGeneration(shopName) {
+            try {
+                const response = await fetch(`${APP_URL}/auth/test-oauth?shop=${shopName}.myshopify.com`);
+                const data = await response.json();
+                
+                document.getElementById('oauthResult').innerHTML += `
+                    <h3>OAuth Generation Test Result:</h3>
+                    <pre style="background: white; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+${JSON.stringify(data, null, 2)}
+                    </pre>
+                `;
+            } catch (error) {
+                document.getElementById('oauthResult').innerHTML += `
+                    <p class="error">Error testing OAuth generation: ${error.message}</p>
+                `;
+            }
+        }
+        
+        function testInstall() {
+            const shopName = document.getElementById('shopName').value.trim() || 'test-store';
+            const installURL = `${APP_URL}/auth/install?shop=${shopName}.myshopify.com`;
+            
+            document.getElementById('installResult').innerHTML = `
+                <p class="info">Opening install URL in new tab...</p>
+                <div class="url-box">${installURL}</div>
+                <p><em>Check the new tab for the OAuth flow. You should be redirected to Shopify's authorization page.</em></p>
+            `;
+            
+            window.open(installURL, '_blank');
+        }
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${APP_URL}/auth/health`);
+                const data = await response.json();
+                
+                document.getElementById('healthResult').innerHTML = `
+                    <h3>App Health Status:</h3>
+                    <pre style="background: white; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+${JSON.stringify(data, null, 2)}
+                    </pre>
+                `;
+            } catch (error) {
+                document.getElementById('healthResult').innerHTML = `
+                    <p class="error">Error checking app health: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

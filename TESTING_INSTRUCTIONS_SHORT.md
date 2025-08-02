@@ -3,7 +3,8 @@
 ## Quick Setup
 1. Install app on development store
 2. Open app from Shopify admin Apps section
-3. Click "Manage Gift Tiers" on dashboard
+3. Verify App Bridge status shows ✅ (green checkmarks)
+4. Click "Manage Gift Tiers" on dashboard
 
 ## Create Multi-Tier Strategy
 ### Add Three Tiers:
@@ -37,6 +38,7 @@
 ✅ Prevents duplicate thresholds (shows error)
 ✅ Auto-sorts tiers by amount
 ✅ Mobile responsive interface
+✅ App Bridge integration working (status shows ✅)
 
 ## Test Validation
 1. Try same threshold on two tiers (should error)
