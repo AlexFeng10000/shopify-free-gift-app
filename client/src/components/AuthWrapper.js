@@ -72,53 +72,65 @@ const AuthWrapper = ({ children }) => {
       if (app && shop) {
         console.log('🔗 App Bridge available, getting session token...');
         
-        // Try to get session token with longer timeout and retry logic
-        let token = null;
-        let attempts = 0;
-        const maxAttempts = 3;
+        // Try different approaches to get session token
+        console.log('🔍 App Bridge instance details:', {
+          hostOrigin: app.hostOrigin,
+          localOrigin: app.localOrigin,
+          features: app.featuresAvailable ? app.featuresAvailable() : 'unknown'
+        });
         
-        while (!token && attempts < maxAttempts) {
-          attempts++;
-          console.log(`🔄 Session token attempt ${attempts}/${maxAttempts}...`);
+        try {
+          // Method 1: Direct session token request
+          console.log('🔄 Trying direct session token request...');
+          const token = await getSessionToken(app);
           
-          try {
-            const sessionTokenPromise = getSessionToken(app);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Session token timeout')), 10000)
-            );
+          if (token) {
+            console.log('✅ Session token obtained via direct method');
+            console.log('🎫 Token preview:', token.substring(0, 20) + '...');
+            setSessionToken(token);
             
-            token = await Promise.race([sessionTokenPromise, timeoutPromise]);
+            // Store token globally for API requests
+            window.sessionToken = token;
+            console.log('💾 Session token stored globally');
             
-            if (token) {
-              console.log('✅ Session token obtained');
-              console.log('🎫 Token preview:', token.substring(0, 20) + '...');
-              setSessionToken(token);
+            setShopDomain(shop);
+            setAuthenticated(true);
+            setLoading(false);
+            return;
+          }
+        } catch (tokenError) {
+          console.error('⚠️ Direct session token failed:', tokenError);
+          
+          // Method 2: Try using app.idToken() if available
+          if (app.idToken && typeof app.idToken === 'function') {
+            try {
+              console.log('🔄 Trying app.idToken() method...');
+              const idToken = await app.idToken();
               
-              // Store token globally for API requests
-              window.sessionToken = token;
-              console.log('💾 Session token stored globally');
-              break; // Exit retry loop on success
-            }
-          } catch (tokenError) {
-            console.error(`⚠️ Session token attempt ${attempts} failed:`, tokenError.message);
-            if (attempts < maxAttempts) {
-              console.log('🔄 Retrying in 2 seconds...');
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              if (idToken) {
+                console.log('✅ Session token obtained via idToken method');
+                console.log('🎫 Token preview:', idToken.substring(0, 20) + '...');
+                setSessionToken(idToken);
+                window.sessionToken = idToken;
+                console.log('💾 Session token stored globally');
+                
+                setShopDomain(shop);
+                setAuthenticated(true);
+                setLoading(false);
+                return;
+              }
+            } catch (idTokenError) {
+              console.error('⚠️ idToken method failed:', idTokenError);
             }
           }
+          
+          console.log('⚠️ All session token methods failed, continuing without token');
         }
         
-        // Continue with or without session token
-        if (token) {
-          console.log('🎉 Session token successfully obtained after', attempts, 'attempts');
-        } else {
-          console.log('⚠️ All session token attempts failed, continuing without token');
-        }
-        
+        // Continue without session token but still authenticate
         setShopDomain(shop);
         setAuthenticated(true);
         setLoading(false);
-        return;
       }
 
       // Check if we have shop parameter (basic authentication)
