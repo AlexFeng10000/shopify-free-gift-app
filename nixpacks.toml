@@ -1,19 +1,18 @@
 [phases.setup]
-nixPkgs = ['nodejs-18_x', 'npm-9_x']
+nixPkgs = ['nodejs-18_x', 'npm']
 
 [phases.install]
 cmds = [
-  'npm install',
   'cd server && npm install',
-  'cd client && npm install'
+  'cd ../client && npm install'
 ]
 
 [phases.build]
 cmds = [
   'cd client && npm run build',
   'mkdir -p server/public',
-  'cp -r client/build/* server/public/ || true'
+  'cp -r client/build/* server/public/'
 ]
 
 [start]
-cmd = 'cd server && npm start'
+cmd = 'cd server && node index.js'
