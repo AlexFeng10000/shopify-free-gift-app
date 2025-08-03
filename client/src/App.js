@@ -13,7 +13,6 @@ function App() {
   // Get URL parameters for App Bridge configuration
   const urlParams = new URLSearchParams(window.location.search);
   const host = urlParams.get('host');
-  const shop = urlParams.get('shop');
 
   // App Bridge configuration
   const appBridgeConfig = {

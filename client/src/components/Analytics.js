@@ -26,7 +26,7 @@ function Analytics() {
   const [error, setError] = useState(null);
 
   // Get App Bridge instance safely
-  const { app, error: appBridgeError } = useAppBridgeSafe();
+  const { app } = useAppBridgeSafe();
 
   const loadAnalytics = useCallback(async () => {
     try {
