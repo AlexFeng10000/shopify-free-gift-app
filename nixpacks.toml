@@ -9,6 +9,8 @@ cmds = [
 
 [phases.build]
 cmds = [
+  'rm -rf client/build',
+  'rm -rf server/public',
   'cd client && npm run build',
   'mkdir -p server/public',
   'cp -r client/build/* server/public/'
