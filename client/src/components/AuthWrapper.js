@@ -72,33 +72,53 @@ const AuthWrapper = ({ children }) => {
       if (app && shop) {
         console.log('🔗 App Bridge available, getting session token...');
         
-        // Set a timeout for session token request
-        const sessionTokenPromise = getSessionToken(app);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session token timeout')), 5000)
-        );
+        // Try to get session token with longer timeout and retry logic
+        let token = null;
+        let attempts = 0;
+        const maxAttempts = 3;
         
-        try {
-          const token = await Promise.race([sessionTokenPromise, timeoutPromise]);
-          console.log('✅ Session token obtained');
-          console.log('🎫 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-          setSessionToken(token);
+        while (!token && attempts < maxAttempts) {
+          attempts++;
+          console.log(`🔄 Session token attempt ${attempts}/${maxAttempts}...`);
           
-          // Store token globally for API requests
-          if (token) {
-            window.sessionToken = token;
-            console.log('💾 Session token stored globally');
+          try {
+            const sessionTokenPromise = getSessionToken(app);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session token timeout')), 10000)
+            );
+            
+            token = await Promise.race([sessionTokenPromise, timeoutPromise]);
+            
+            if (token) {
+              console.log('✅ Session token obtained');
+              console.log('🎫 Token preview:', token.substring(0, 20) + '...');
+              setSessionToken(token);
+              
+              // Store token globally for API requests
+              window.sessionToken = token;
+              console.log('💾 Session token stored globally');
+              break; // Exit retry loop on success
+            }
+          } catch (tokenError) {
+            console.error(`⚠️ Session token attempt ${attempts} failed:`, tokenError.message);
+            if (attempts < maxAttempts) {
+              console.log('🔄 Retrying in 2 seconds...');
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
           }
-          
-          setShopDomain(shop);
-          setAuthenticated(true);
-          setLoading(false);
-          return;
-        } catch (tokenError) {
-          console.error('⚠️ Session token failed:', tokenError);
-          console.log('🔄 Continuing without session token...');
-          // Continue without session token - don't block the app
         }
+        
+        // Continue with or without session token
+        if (token) {
+          console.log('🎉 Session token successfully obtained after', attempts, 'attempts');
+        } else {
+          console.log('⚠️ All session token attempts failed, continuing without token');
+        }
+        
+        setShopDomain(shop);
+        setAuthenticated(true);
+        setLoading(false);
+        return;
       }
 
       // Check if we have shop parameter (basic authentication)
