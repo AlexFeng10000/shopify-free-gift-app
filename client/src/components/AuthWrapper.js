@@ -1,40 +1,25 @@
 import React, { useState, useEffect } from 'react';
-
-// App Bridge integration - Official Shopify CDN
-let AppBridge;
-if (typeof window !== 'undefined') {
-  // Try multiple possible App Bridge locations
-  AppBridge = window.ShopifyAppBridge || window.shopify || window.Shopify?.AppBridge;
-}
+import { getSessionToken } from '@shopify/app-bridge/utilities';
+import { useAppBridgeSafe } from '../hooks/useAppBridgeSafe';
 
 const AuthWrapper = ({ children }) => {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [shopDomain, setShopDomain] = useState('');
   const [demoMode, setDemoMode] = useState(false);
-  const [appBridge, setAppBridge] = useState(null);
   const [sessionToken, setSessionToken] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Get App Bridge instance safely
+  const { app, error: appBridgeError } = useAppBridgeSafe();
 
   const checkAuthStatus = async () => {
     try {
-      // Debug: Confirm React app is running
       console.log('🚀 Gift Booster App - AuthWrapper initialized');
       console.log('📍 Current URL:', window.location.href);
       console.log('🕐 Timestamp:', new Date().toISOString());
       
-      // Debug: Check what's available
-      console.log('🔍 Window globals check:');
-      console.log('  ShopifyAppBridge:', typeof window.ShopifyAppBridge);
-      console.log('  shopify:', typeof window.shopify);
-      console.log('  Shopify:', typeof window.Shopify);
-      console.log('  AppBridge variable:', typeof AppBridge);
-      
-      // Debug: Check if we're in an iframe (embedded context)
-      console.log('🖼️ Embedded context check:');
-      console.log('  In iframe:', window !== window.top);
-      console.log('  Parent origin:', window !== window.top ? document.referrer : 'Not in iframe');
-      
-      // Get shop from URL parameters
+      // Get URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
       const hmac = urlParams.get('hmac');
@@ -48,91 +33,20 @@ const AuthWrapper = ({ children }) => {
       console.log('  demo:', demo);
       console.log('  installed:', installed);
 
-      // Initialize App Bridge v4 if we have shop and AppBridge is available
-      if (shop && AppBridge && !appBridge) {
-        // If no host parameter, try to get it from the embedded context
-        let hostParam = host;
-        if (!hostParam && window !== window.top) {
-          // We're in an iframe, try to construct host from shop domain
-          const shopDomain = shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
-          hostParam = btoa(shopDomain).replace(/=/g, '');
-          console.log('🔧 Generated host parameter:', hostParam);
-        }
-        console.log('🔗 Initializing App Bridge v4...');
-        console.log('🔍 Available AppBridge methods:', Object.keys(AppBridge || {}));
-        
-        try {
-          // App Bridge v4 initialization
-          const app = AppBridge.createApp({
-            apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
-            host: hostParam,
-            forceRedirect: true
-          });
-          
-          setAppBridge(app);
-          console.log('✅ App Bridge v4 initialized successfully');
-          console.log('🔍 App methods:', Object.keys(app || {}));
-          
-          // App Bridge v4 session token handling
-          if (app && typeof app.idToken === 'function') {
-            console.log('🔑 Attempting to get session token...');
-            app.idToken().then((token) => {
-              console.log('✅ Session token obtained via idToken()');
-              console.log('🎫 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-              setSessionToken(token);
-              
-              // Use session token for authenticated requests
-              if (token) {
-                // Store token for API requests
-                window.sessionToken = token;
-                console.log('💾 Session token stored globally');
-              }
-            }).catch((error) => {
-              console.log('⚠️ Session token failed:', error);
-              
-              // Fallback: try alternative session token methods
-              if (app.getState) {
-                console.log('🔄 Trying alternative session token method...');
-                try {
-                  const state = app.getState();
-                  console.log('📊 App state:', state);
-                } catch (stateError) {
-                  console.log('⚠️ App state failed:', stateError);
-                }
-              }
-            });
-          } else {
-            console.log('⚠️ idToken method not available on app object');
-            console.log('🔍 Available app methods:', Object.keys(app || {}));
-          }
-          
-        } catch (error) {
-          console.log('⚠️ App Bridge initialization failed:', error);
-          console.log('🔍 Error details:', error.message);
-          
-          // Try alternative App Bridge detection
-          if (window.ShopifyAppBridge) {
-            console.log('🔄 Trying legacy App Bridge...');
-            try {
-              const legacyApp = window.ShopifyAppBridge.createApp({
-                apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
-                host: host,
-                forceRedirect: true
-              });
-              setAppBridge(legacyApp);
-              console.log('✅ Legacy App Bridge initialized');
-            } catch (legacyError) {
-              console.log('⚠️ Legacy App Bridge also failed:', legacyError);
-            }
-          }
-        }
+      // Check for demo mode first
+      if (demo === 'true' || window.location.search.includes('demo=true')) {
+        console.log('🎭 Demo mode activated');
+        setDemoMode(true);
+        setAuthenticated(true);
+        setShopDomain('demo-store.myshopify.com');
+        setLoading(false);
+        return;
       }
 
       // Check if this is a Shopify installation request
       if (shop && hmac && !installed && !demo) {
         console.log('🚀 Installation request detected, redirecting to OAuth...');
         
-        // Generate OAuth URL
         const clientId = '0a84e1df4c003abfab2f61d8344ea04b';
         const appUrl = window.location.origin;
         const redirectUri = `${appUrl}/auth/callback`;
@@ -152,17 +66,32 @@ const AuthWrapper = ({ children }) => {
         return;
       }
 
-      // Check for demo mode
-      if (demo === 'true' || window.location.search.includes('demo=true')) {
-        console.log('🎭 Demo mode activated');
-        setDemoMode(true);
-        setAuthenticated(true);
-        setShopDomain('demo-store.myshopify.com');
-        setLoading(false);
-        return;
+      // If we have App Bridge instance, get session token
+      if (app && shop && host) {
+        console.log('🔗 App Bridge available, getting session token...');
+        try {
+          const token = await getSessionToken(app);
+          console.log('✅ Session token obtained');
+          console.log('🎫 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+          setSessionToken(token);
+          
+          // Store token globally for API requests
+          if (token) {
+            window.sessionToken = token;
+            console.log('💾 Session token stored globally');
+          }
+          
+          setShopDomain(shop);
+          setAuthenticated(true);
+          setLoading(false);
+          return;
+        } catch (tokenError) {
+          console.error('⚠️ Session token failed:', tokenError);
+          setError('Failed to get session token');
+        }
       }
 
-      // Check if we have a shop parameter (authenticated)
+      // Check if we have shop parameter (basic authentication)
       if (shop) {
         console.log('✅ Shop parameter found:', shop);
         setShopDomain(shop);
@@ -178,6 +107,7 @@ const AuthWrapper = ({ children }) => {
 
     } catch (error) {
       console.error('❌ Authentication check failed:', error);
+      setError(error.message);
       setAuthenticated(false);
       setLoading(false);
     }
@@ -186,7 +116,7 @@ const AuthWrapper = ({ children }) => {
   useEffect(() => {
     checkAuthStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [app]);
 
   if (loading) {
     return (
@@ -386,9 +316,9 @@ const AuthWrapper = ({ children }) => {
             {/* App Bridge Status */}
             <div className="app-bridge-status">
               <h3>🔗 App Bridge Status</h3>
-              <p><strong>App Bridge Available:</strong> {AppBridge ? '✅ Yes' : '❌ No'}</p>
-              <p><strong>App Bridge Initialized:</strong> {appBridge ? '✅ Yes' : '❌ No'}</p>
+              <p><strong>App Bridge Available:</strong> {app ? '✅ Yes' : '❌ No'}</p>
               <p><strong>Session Token:</strong> {sessionToken ? '✅ Available' : '❌ Not Available'}</p>
+              <p><strong>Error:</strong> {error || 'None'}</p>
             </div>
             
             <div className="demo-section">

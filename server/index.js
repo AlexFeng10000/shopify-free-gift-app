@@ -7,6 +7,7 @@ const database = require('./database');
 const giftRoutes = require('./routes/gifts');
 const webhookRoutes = require('./routes/webhooks');
 const { router: authRoutes, verifySession } = require('./routes/auth');
+const { verifySessionToken, optionalSessionToken } = require('./middleware/sessionToken');
 
 console.log('🔧 Starting Free Gift App Server...');
 
@@ -48,8 +49,8 @@ if (hasShopifyConfig) {
 // Authentication Routes (must come first)
 app.use('/auth', authRoutes);
 
-// API Routes (protected by authentication)
-app.use('/api/gifts', verifySession, giftRoutes);
+// API Routes (protected by session token authentication)
+app.use('/api/gifts', optionalSessionToken, giftRoutes);
 
 // Mandatory Privacy Compliance Webhooks
 app.use('/webhooks', webhookRoutes);
@@ -129,6 +130,16 @@ app.get('/', (req, res) => {
       authFlow: '/auth/install?shop=your-store.myshopify.com'
     });
   }
+});
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: process.env.PORT || 5000
+  });
 });
 
 // Serve static files in production

@@ -14,6 +14,8 @@ import {
   Badge
 } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
+import { getSessionToken } from '@shopify/app-bridge/utilities';
+import { useAppBridgeSafe } from '../hooks/useAppBridgeSafe';
 import axios from 'axios';
 
 function Analytics() {
@@ -23,13 +25,33 @@ function Analytics() {
   const [period, setPeriod] = useState('7');
   const [error, setError] = useState(null);
 
+  // Get App Bridge instance safely
+  const { app, error: appBridgeError } = useAppBridgeSafe();
+
   const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Try to load real data from API
+      // Try to load real data from API with session token
       try {
-        const response = await axios.get(`/api/gifts/analytics?days=${period}`);
+        let headers = {
+          'Content-Type': 'application/json'
+        };
+
+        // Add session token if App Bridge is available
+        if (app) {
+          try {
+            const token = await getSessionToken(app);
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('✅ Using session token for API request');
+          } catch (tokenError) {
+            console.log('⚠️ Could not get session token:', tokenError);
+          }
+        }
+
+        const response = await axios.get(`/api/gifts/analytics?days=${period}`, {
+          headers
+        });
         setAnalytics(response.data);
         setError(null);
       } catch (apiError) {
@@ -53,7 +75,7 @@ function Analytics() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, app]);
 
   useEffect(() => {
     loadAnalytics();
