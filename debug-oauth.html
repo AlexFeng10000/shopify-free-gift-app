@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Shopify App Installation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .debug-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 12px 24px; margin: 10px 5px; background: #007ace; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a87; }
+        .url-box { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; word-break: break-all; margin: 10px 0; }
+        code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Shopify App Installation</h1>
+    
+    <div class="debug-section warning">
+        <h3>Current Status</h3>
+        <p><strong>Embedded App Setting:</strong> ✅ True (Correct)</p>
+        <p><strong>Issue:</strong> Still getting <code>host: null</code></p>
+        <p><strong>Possible Causes:</strong></p>
+        <ul>
+            <li>App not properly installed in development store</li>
+            <li>Accessing app directly instead of through Shopify admin</li>
+            <li>OAuth callback not redirecting to embedded context</li>
+        </ul>
+    </div>
+
+    <div class="debug-section">
+        <h3>Step 1: Check App Installation Status</h3>
+        <p>Go to your development store and check if the app appears in the Apps section:</p>
+        <button onclick="openDevStore()">🏪 Open Development Store Admin</button>
+        <p><small>Look for "Gift Booster" in the Apps section. If it's not there, the app isn't properly installed.</small></p>
+    </div>
+
+    <div class="debug-section">
+        <h3>Step 2: Test Direct OAuth Installation</h3>
+        <p>If the app isn't in your store's Apps section, try a direct OAuth installation:</p>
+        <button onclick="directOAuth()">🔐 Direct OAuth Install</button>
+        <p><small>This will take you through the complete OAuth flow and should install the app properly.</small></p>
+    </div>
+
+    <div class="debug-section">
+        <h3>Step 3: Test Embedded Access</h3>
+        <p>After installation, test accessing the app through Shopify admin:</p>
+        <div class="url-box">
+            Expected URL pattern when accessed correctly:<br>
+            https://web-production-99c0.up.railway.app/?shop=gift-booster-test.myshopify.com&host=<strong>ENCODED_HOST</strong>&timestamp=123456
+        </div>
+        <p>The <code>host</code> parameter should be a base64-encoded string, not <code>null</code>.</p>
+    </div>
+
+    <div class="debug-section success">
+        <h3>What Should Happen</h3>
+        <p>When everything is working correctly:</p>
+        <ol>
+            <li>App appears in your store's Apps section</li>
+            <li>Clicking the app opens it in an iframe within Shopify admin</li>
+            <li>URL includes <code>host</code> parameter</li>
+            <li>Console shows "✅ Session token obtained"</li>
+        </ol>
+    </div>
+
+    <div class="debug-section">
+        <h3>Alternative: Test with Partner Dashboard</h3>
+        <p>You can also test installation directly from Partner Dashboard:</p>
+        <button onclick="openPartnerDashboard()">🔧 Open Partner Dashboard</button>
+        <p><small>Go to your app → "Test on development store" → Select your store</small></p>
+    </div>
+
+    <script>
+        function openDevStore() {
+            window.open('https://gift-booster-test.myshopify.com/admin/apps', '_blank');
+        }
+
+        function directOAuth() {
+            const shop = 'gift-booster-test.myshopify.com';
+            const clientId = '0a84e1df4c003abfab2f61d8344ea04b';
+            const appUrl = 'https://web-production-99c0.up.railway.app';
+            const redirectUri = `${appUrl}/auth/callback`;
+            const scopes = 'read_products,write_products,read_orders,write_draft_orders';
+            const state = Math.random().toString(36).substring(7);
+            
+            const oauthUrl = `https://gift-booster-test.myshopify.com/admin/oauth/authorize?` +
+                `client_id=${clientId}&` +
+                `scope=${encodeURIComponent(scopes)}&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `state=${state}`;
+            
+            console.log('🔐 Starting OAuth installation:', oauthUrl);
+            window.location.href = oauthUrl;
+        }
+
+        function openPartnerDashboard() {
+            window.open('https://partners.shopify.com/', '_blank');
+        }
+    </script>
+</body>
+</html>
