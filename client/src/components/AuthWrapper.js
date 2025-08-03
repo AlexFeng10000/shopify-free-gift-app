@@ -67,7 +67,9 @@ const AuthWrapper = ({ children }) => {
       }
 
       // If we have App Bridge instance, get session token
-      if (app && shop && host) {
+      console.log('🔍 AuthWrapper - Checking session token conditions:', { app: !!app, shop: !!shop, host: !!host });
+      
+      if (app && shop) {
         console.log('🔗 App Bridge available, getting session token...');
         try {
           const token = await getSessionToken(app);
