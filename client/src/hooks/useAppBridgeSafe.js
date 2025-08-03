@@ -9,7 +9,7 @@ export const useAppBridgeSafe = () => {
   try {
     // Try to get the App Bridge context directly
     const app = useContext(Context);
-    
+
     // Check if we have a valid App Bridge instance
     if (app && typeof app === 'object') {
       return { app, error: null };
