@@ -13,7 +13,7 @@
     "build": "cd server && npm install && cd ../client && npm install && npm run build && cd ..",
     "start": "cd server && npm start",
     "install-all": "cd server && npm install && cd ../client && npm install && cd ..",
-    "vercel-build": "cd client && npm install && npm run build",
+
     "railway-build": "cd server && npm install && cd ../client && npm install && npm run build && cd .."
   },
   "keywords": [
