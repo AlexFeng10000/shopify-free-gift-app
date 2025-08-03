@@ -17,7 +17,7 @@ function App() {
   
   // Check if we're in Shopify admin context (even without host parameter)
   const isInShopifyAdmin = window.location !== window.parent.location || 
-                          window.location.ancestorOrigins?.length > 0 ||
+                          (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) ||
                           document.referrer.includes('shopify.com');
 
   // Generate host parameter if missing but we're in Shopify context
