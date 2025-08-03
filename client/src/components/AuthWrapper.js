@@ -104,6 +104,12 @@ const AuthWrapper = ({ children }) => {
           console.error('⚠️ Direct session token failed:', tokenError.message);
           
           // Method 2: Try app.idToken() with timeout
+          console.log('🔍 Checking app.idToken availability:', {
+            hasIdToken: !!(app.idToken),
+            idTokenType: typeof app.idToken,
+            appMethods: Object.keys(app).filter(key => typeof app[key] === 'function')
+          });
+          
           if (app.idToken && typeof app.idToken === 'function') {
             try {
               console.log('🔄 Trying app.idToken() method with timeout...');
@@ -125,9 +131,16 @@ const AuthWrapper = ({ children }) => {
             } catch (idTokenError) {
               console.error('⚠️ idToken method failed:', idTokenError.message);
             }
+          } else {
+            console.log('⚠️ app.idToken not available');
           }
           
           // Method 3: Try authenticatedFetch approach
+          console.log('🔍 Checking ShopifyAppBridge availability:', {
+            hasShopifyAppBridge: !!(window.ShopifyAppBridge),
+            sessionTokenObtained: sessionTokenObtained
+          });
+          
           if (!sessionTokenObtained && window.ShopifyAppBridge) {
             try {
               console.log('🔄 Trying ShopifyAppBridge.authenticatedFetch...');
@@ -140,6 +153,8 @@ const AuthWrapper = ({ children }) => {
             } catch (fetchError) {
               console.error('⚠️ authenticatedFetch failed:', fetchError.message);
             }
+          } else if (!window.ShopifyAppBridge) {
+            console.log('⚠️ ShopifyAppBridge not available on window');
           }
         }
         
