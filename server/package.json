@@ -14,7 +14,6 @@
     "@shopify/shopify-api": "^7.5.0",
     "@shopify/shopify-app-express": "^2.1.0",
     "sqlite3": "^5.1.6",
-    "crypto": "^1.0.1",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
