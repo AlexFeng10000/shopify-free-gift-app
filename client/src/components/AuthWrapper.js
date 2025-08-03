@@ -66,13 +66,20 @@ const AuthWrapper = ({ children }) => {
         return;
       }
 
-      // If we have App Bridge instance, get session token
+      // If we have App Bridge instance, try to get session token (with timeout)
       console.log('🔍 AuthWrapper - Checking session token conditions:', { app: !!app, shop: !!shop, host: !!host });
       
       if (app && shop) {
         console.log('🔗 App Bridge available, getting session token...');
+        
+        // Set a timeout for session token request
+        const sessionTokenPromise = getSessionToken(app);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session token timeout')), 5000)
+        );
+        
         try {
-          const token = await getSessionToken(app);
+          const token = await Promise.race([sessionTokenPromise, timeoutPromise]);
           console.log('✅ Session token obtained');
           console.log('🎫 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
           setSessionToken(token);
@@ -89,7 +96,8 @@ const AuthWrapper = ({ children }) => {
           return;
         } catch (tokenError) {
           console.error('⚠️ Session token failed:', tokenError);
-          setError('Failed to get session token');
+          console.log('🔄 Continuing without session token...');
+          // Continue without session token - don't block the app
         }
       }
 
