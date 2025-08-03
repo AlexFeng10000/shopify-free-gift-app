@@ -21,17 +21,15 @@ function App() {
                           document.referrer.includes('shopify.com');
 
   // Try to extract host from referrer if missing
-  if (!host && document.referrer) {
+  if (!host && document.referrer && shop) {
     try {
       const referrerUrl = new URL(document.referrer);
       if (referrerUrl.hostname.includes('shopify.com')) {
-        // Extract shop domain from referrer and create host parameter
-        const shopMatch = referrerUrl.hostname.match(/^(.+)\.shopify\.com$/);
-        if (shopMatch) {
-          const shopDomain = `${shopMatch[1]}.myshopify.com`;
-          host = btoa(`${shopDomain}/admin`).replace(/=/g, '');
-          console.log('🔧 Extracted host from referrer:', host);
-        }
+        // Use the shop parameter to create the correct host parameter
+        const shopDomain = shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
+        host = btoa(`${shopDomain}/admin`).replace(/=/g, '');
+        console.log('🔧 Extracted host using shop domain:', host);
+        console.log('🔍 Shop domain used:', shopDomain);
       }
     } catch (e) {
       console.log('⚠️ Could not extract host from referrer:', e.message);
