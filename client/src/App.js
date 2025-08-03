@@ -12,7 +12,7 @@ import GiftTiers from './components/GiftTiers';
 function App() {
   // Get URL parameters for App Bridge configuration
   const urlParams = new URLSearchParams(window.location.search);
-  const host = urlParams.get('host');
+  let host = urlParams.get('host');
   const shop = urlParams.get('shop');
   
   // Check if we're in Shopify admin context (even without host parameter)
@@ -20,7 +20,25 @@ function App() {
                           (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) ||
                           document.referrer.includes('shopify.com');
 
-  // Generate host parameter if missing but we're in Shopify context
+  // Try to extract host from referrer if missing
+  if (!host && document.referrer) {
+    try {
+      const referrerUrl = new URL(document.referrer);
+      if (referrerUrl.hostname.includes('shopify.com')) {
+        // Extract shop domain from referrer and create host parameter
+        const shopMatch = referrerUrl.hostname.match(/^(.+)\.shopify\.com$/);
+        if (shopMatch) {
+          const shopDomain = `${shopMatch[1]}.myshopify.com`;
+          host = btoa(`${shopDomain}/admin`).replace(/=/g, '');
+          console.log('🔧 Extracted host from referrer:', host);
+        }
+      }
+    } catch (e) {
+      console.log('⚠️ Could not extract host from referrer:', e.message);
+    }
+  }
+
+  // Generate host parameter if still missing but we're in Shopify context
   let effectiveHost = host;
   if (!host && shop && isInShopifyAdmin) {
     // Generate host parameter from shop domain
@@ -29,10 +47,10 @@ function App() {
     console.log('🔧 Generated host parameter for embedded context:', effectiveHost);
   }
 
-  // App Bridge configuration
+  // App Bridge configuration - use real host if available, otherwise effectiveHost
   const appBridgeConfig = {
     apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
-    host: effectiveHost,
+    host: host || effectiveHost, // Prefer real host parameter for session tokens
     forceRedirect: true,
   };
 
