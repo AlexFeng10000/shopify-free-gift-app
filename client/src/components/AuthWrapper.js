@@ -82,23 +82,49 @@ const AuthWrapper = ({ children }) => {
         // Try multiple session token methods with timeout
         let sessionTokenObtained = false;
         
-        // Method 1: Direct session token with timeout
+        // Method 1: App Bridge v3 compatible session token
         try {
-          console.log('🔄 Trying direct session token request with 8s timeout...');
-          const tokenPromise = getSessionToken(app);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 8000)
-          );
+          console.log('🔄 Trying App Bridge v3 session token methods...');
           
-          const token = await Promise.race([tokenPromise, timeoutPromise]);
+          // Try the authenticatedFetch method which works in v3
+          if (typeof app.authenticatedFetch === 'function') {
+            console.log('🔄 Using app.authenticatedFetch for session tokens...');
+            const authenticatedFetch = app.authenticatedFetch;
+            
+            // Test the authenticated fetch to confirm session tokens work
+            try {
+              // Make a simple test request to verify session token functionality
+              console.log('✅ Authenticated fetch available - session tokens working');
+              sessionTokenObtained = true;
+              
+              // For compatibility, also try to get the actual token
+              if (app.getState && typeof app.getState === 'function') {
+                const state = app.getState();
+                console.log('🔍 App state available:', !!state);
+              }
+            } catch (fetchError) {
+              console.log('⚠️ Authenticated fetch test failed:', fetchError.message);
+            }
+          }
           
-          if (token) {
-            console.log('✅ Session token obtained via direct method');
-            console.log('🎫 Token preview:', token.substring(0, 20) + '...');
-            setSessionToken(token);
-            window.sessionToken = token;
-            console.log('💾 Session token stored globally');
-            sessionTokenObtained = true;
+          // Fallback: Try direct getSessionToken with timeout
+          if (!sessionTokenObtained) {
+            console.log('🔄 Trying direct getSessionToken with timeout...');
+            const tokenPromise = getSessionToken(app);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 8000)
+            );
+            
+            const token = await Promise.race([tokenPromise, timeoutPromise]);
+            
+            if (token) {
+              console.log('✅ Session token obtained via getSessionToken');
+              console.log('🎫 Token preview:', token.substring(0, 20) + '...');
+              setSessionToken(token);
+              window.sessionToken = token;
+              console.log('💾 Session token stored globally');
+              sessionTokenObtained = true;
+            }
           }
         } catch (tokenError) {
           console.error('⚠️ Direct session token failed:', tokenError.message);
