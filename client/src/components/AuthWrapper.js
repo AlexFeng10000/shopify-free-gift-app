@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSessionToken } from '@shopify/app-bridge/utilities';
+import { getSessionToken } from '../utils/sessionToken';
 import { useAppBridgeSafe } from '../hooks/useAppBridgeSafe';
 
 const AuthWrapper = ({ children }) => {
@@ -66,137 +66,34 @@ const AuthWrapper = ({ children }) => {
         return;
       }
 
-      // If we have App Bridge instance, try to get session token (with timeout)
+      // If we have App Bridge instance, try to get session token
       console.log('🔍 AuthWrapper - Checking session token conditions:', { app: !!app, shop: !!shop, host: !!host });
       
       if (app && shop) {
         console.log('🔗 App Bridge available, getting session token...');
         
-        // Try different approaches to get session token
-        console.log('🔍 App Bridge instance details:', {
-          hostOrigin: app.hostOrigin,
-          localOrigin: app.localOrigin,
-          features: app.featuresAvailable ? app.featuresAvailable() : 'unknown'
-        });
-        
-        // Try multiple session token methods with timeout
-        let sessionTokenObtained = false;
-        
-        // Method 1: App Bridge v3 compatible session token
+        // Try to get session token using our improved utility
         try {
-          console.log('🔄 Trying App Bridge v3 session token methods...');
-          console.log('🔍 Available app methods:', Object.keys(app).filter(key => typeof app[key] === 'function'));
-          console.log('🔍 All app properties:', Object.keys(app));
-          console.log('🔍 app.authenticatedFetch type:', typeof app.authenticatedFetch);
+          console.log('🔄 Attempting to get session token...');
+          const token = await getSessionToken(app);
           
-          // Try the authenticatedFetch method which works in v3
-          if (typeof app.authenticatedFetch === 'function') {
-            console.log('🔄 Using app.authenticatedFetch for session tokens...');
-            
-            // Test the authenticated fetch to confirm session tokens work
-            try {
-              // Verify the function exists and is callable
-              console.log('✅ Authenticated fetch available - session tokens working');
-              console.log('🔍 authenticatedFetch type:', typeof app.authenticatedFetch);
-              sessionTokenObtained = true;
-              
-              // For compatibility, also try to get the actual token
-              if (app.getState && typeof app.getState === 'function') {
-                const state = app.getState();
-                console.log('🔍 App state available:', !!state);
-              }
-            } catch (fetchError) {
-              console.log('⚠️ Authenticated fetch test failed:', fetchError.message);
-            }
-          }
-          
-          // Fallback: Try direct getSessionToken with timeout
-          if (!sessionTokenObtained) {
-            console.log('🔄 Trying direct getSessionToken with timeout...');
-            const tokenPromise = getSessionToken(app);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout')), 8000)
-            );
-            
-            const token = await Promise.race([tokenPromise, timeoutPromise]);
-            
-            if (token) {
-              console.log('✅ Session token obtained via getSessionToken');
-              console.log('🎫 Token preview:', token.substring(0, 20) + '...');
-              setSessionToken(token);
-              window.sessionToken = token;
-              console.log('💾 Session token stored globally');
-              sessionTokenObtained = true;
-            }
+          if (token) {
+            console.log('✅ Session token obtained successfully');
+            console.log('🎫 Token preview:', token.substring(0, 20) + '...');
+            setSessionToken(token);
+            window.sessionToken = token;
+            console.log('💾 Session token stored globally');
           }
         } catch (tokenError) {
-          console.error('⚠️ Direct session token failed:', tokenError.message);
-          
-          // Method 2: Try app.idToken() with timeout
-          console.log('🔍 Checking app.idToken availability:', {
-            hasIdToken: !!(app.idToken),
-            idTokenType: typeof app.idToken,
-            appMethods: Object.keys(app).filter(key => typeof app[key] === 'function')
-          });
-          
-          if (app.idToken && typeof app.idToken === 'function') {
-            try {
-              console.log('🔄 Trying app.idToken() method with timeout...');
-              const idTokenPromise = app.idToken();
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 5000)
-              );
-              
-              const idToken = await Promise.race([idTokenPromise, timeoutPromise]);
-              
-              if (idToken) {
-                console.log('✅ Session token obtained via idToken method');
-                console.log('🎫 Token preview:', idToken.substring(0, 20) + '...');
-                setSessionToken(idToken);
-                window.sessionToken = idToken;
-                console.log('💾 Session token stored globally');
-                sessionTokenObtained = true;
-              }
-            } catch (idTokenError) {
-              console.error('⚠️ idToken method failed:', idTokenError.message);
-            }
-          } else {
-            console.log('⚠️ app.idToken not available');
-          }
-          
-          // Method 3: Try authenticatedFetch approach
-          console.log('🔍 Checking ShopifyAppBridge availability:', {
-            hasShopifyAppBridge: !!(window.ShopifyAppBridge),
-            sessionTokenObtained: sessionTokenObtained
-          });
-          
-          if (!sessionTokenObtained && window.ShopifyAppBridge) {
-            try {
-              console.log('🔄 Trying ShopifyAppBridge.authenticatedFetch...');
-              const authenticatedFetch = window.ShopifyAppBridge.authenticatedFetch(app);
-              if (authenticatedFetch) {
-                console.log('✅ Authenticated fetch available (session token working)');
-                // For Shopify's tests, having authenticatedFetch available indicates session tokens work
-                sessionTokenObtained = true;
-              }
-            } catch (fetchError) {
-              console.error('⚠️ authenticatedFetch failed:', fetchError.message);
-            }
-          } else if (!window.ShopifyAppBridge) {
-            console.log('⚠️ ShopifyAppBridge not available on window');
-          }
+          console.log('⚠️ Session token failed, continuing without token:', tokenError.message);
+          // Continue without session token - this is acceptable for many use cases
         }
         
-        if (sessionTokenObtained) {
-          console.log('🎉 Session token functionality confirmed');
-        } else {
-          console.log('⚠️ All session token methods failed, continuing without token');
-        }
-        
-        // Continue without session token but still authenticate
+        // Set authentication regardless of session token success
         setShopDomain(shop);
         setAuthenticated(true);
         setLoading(false);
+        return;
       }
 
       // Check if we have shop parameter (basic authentication)
