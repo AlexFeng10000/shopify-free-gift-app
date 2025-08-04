@@ -9,12 +9,32 @@ const AuthWrapper = ({ children }) => {
   const [demoMode, setDemoMode] = useState(false);
   const [sessionToken, setSessionToken] = useState(null);
   const [error, setError] = useState(null);
+  const [authCompleted, setAuthCompleted] = useState(false);
 
   // Get App Bridge instance safely
   const { app } = useAppBridgeSafe();
 
+  const completeAuthentication = (isAuthenticated, shopDomain = '', isDemoMode = false) => {
+    if (authCompleted) {
+      console.log('🔒 Authentication already completed, skipping');
+      return;
+    }
+    
+    console.log('✅ Completing authentication:', { isAuthenticated, shopDomain, isDemoMode });
+    setAuthCompleted(true);
+    setAuthenticated(isAuthenticated);
+    setShopDomain(shopDomain);
+    setDemoMode(isDemoMode);
+    setLoading(false);
+  };
+
   const checkAuthStatus = async () => {
     try {
+      if (authCompleted) {
+        console.log('🔒 Authentication already completed, skipping check');
+        return;
+      }
+
       console.log('🚀 Gift Booster App - AuthWrapper initialized');
       console.log('📍 Current URL:', window.location.href);
       console.log('🕐 Timestamp:', new Date().toISOString());
@@ -36,10 +56,7 @@ const AuthWrapper = ({ children }) => {
       // Check for demo mode first
       if (demo === 'true' || window.location.search.includes('demo=true')) {
         console.log('🎭 Demo mode activated');
-        setDemoMode(true);
-        setAuthenticated(true);
-        setShopDomain('demo-store.myshopify.com');
-        setLoading(false);
+        completeAuthentication(true, 'demo-store.myshopify.com', true);
         return;
       }
 
@@ -69,18 +86,18 @@ const AuthWrapper = ({ children }) => {
       // Check if we have shop parameter (basic authentication) - prioritize this
       if (shop) {
         console.log('✅ Shop parameter found:', shop);
-        setShopDomain(shop);
         
-        // Try to get session token if App Bridge is available (with timeout)
+        // Complete authentication immediately to prevent race conditions
+        completeAuthentication(true, shop, false);
+        
+        // Try to get session token if App Bridge is available (async, non-blocking)
         if (app) {
           console.log('🔗 App Bridge available, getting session token...');
           
-          // Use a timeout to prevent hanging on session token
+          // Use a shorter timeout since authentication is already complete
           const sessionTokenTimeout = setTimeout(() => {
-            console.log('⚠️ Session token timeout, continuing without token');
-            setAuthenticated(true);
-            setLoading(false);
-          }, 5000);
+            console.log('⚠️ Session token timeout, but authentication already complete');
+          }, 3000);
           
           try {
             console.log('🔄 Attempting to get session token...');
@@ -97,28 +114,23 @@ const AuthWrapper = ({ children }) => {
             }
           } catch (tokenError) {
             clearTimeout(sessionTokenTimeout);
-            console.log('⚠️ Session token failed, continuing without token:', tokenError.message);
-            // Continue without session token - this is acceptable for many use cases
+            console.log('⚠️ Session token failed, but authentication already complete:', tokenError.message);
           }
         } else {
-          console.log('⚠️ App Bridge not available yet, continuing without session token');
+          console.log('⚠️ App Bridge not available yet, but authentication complete');
         }
         
-        setAuthenticated(true);
-        setLoading(false);
         return;
       }
 
       // No authentication found
       console.log('❌ No authentication found');
-      setAuthenticated(false);
-      setLoading(false);
+      completeAuthentication(false);
 
     } catch (error) {
       console.error('❌ Authentication check failed:', error);
       setError(error.message);
-      setAuthenticated(false);
-      setLoading(false);
+      completeAuthentication(false);
     }
   };
 
