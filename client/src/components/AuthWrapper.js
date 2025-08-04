@@ -89,12 +89,12 @@ const AuthWrapper = ({ children }) => {
           // Try the authenticatedFetch method which works in v3
           if (typeof app.authenticatedFetch === 'function') {
             console.log('🔄 Using app.authenticatedFetch for session tokens...');
-            const authenticatedFetch = app.authenticatedFetch;
             
             // Test the authenticated fetch to confirm session tokens work
             try {
-              // Make a simple test request to verify session token functionality
+              // Verify the function exists and is callable
               console.log('✅ Authenticated fetch available - session tokens working');
+              console.log('🔍 authenticatedFetch type:', typeof app.authenticatedFetch);
               sessionTokenObtained = true;
               
               // For compatibility, also try to get the actual token
