@@ -85,6 +85,9 @@ const AuthWrapper = ({ children }) => {
         // Method 1: App Bridge v3 compatible session token
         try {
           console.log('🔄 Trying App Bridge v3 session token methods...');
+          console.log('🔍 Available app methods:', Object.keys(app).filter(key => typeof app[key] === 'function'));
+          console.log('🔍 All app properties:', Object.keys(app));
+          console.log('🔍 app.authenticatedFetch type:', typeof app.authenticatedFetch);
           
           // Try the authenticatedFetch method which works in v3
           if (typeof app.authenticatedFetch === 'function') {
