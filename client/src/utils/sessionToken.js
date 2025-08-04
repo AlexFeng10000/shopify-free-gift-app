@@ -14,9 +14,52 @@ export const getSessionToken = async (app) => {
     throw new Error('App Bridge instance not available');
   }
 
+  console.log('🔍 App Bridge instance analysis:', {
+    hasIdToken: !!(app.idToken),
+    hasDispatch: !!(app.dispatch),
+    hasGetState: !!(app.getState),
+    hasFeaturesAvailable: !!(app.featuresAvailable),
+    hasAuthenticatedFetch: !!(app.authenticatedFetch),
+    allMethods: Object.keys(app).filter(key => typeof app[key] === 'function')
+  });
+
   // Try different methods to get session token based on App Bridge version
   try {
-    // Method 1: Try the idToken method (App Bridge v3) with timeout
+    // Method 1: Try App Bridge v3 session token via dispatch (most reliable for v3)
+    if (app.dispatch && typeof app.dispatch === 'function') {
+      console.log('🔄 Getting session token via App Bridge dispatch');
+      try {
+        // Use the proper App Bridge v3 session token request
+        const token = await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Session token dispatch timeout'));
+          }, 5000);
+
+          // Listen for session token response
+          const unsubscribe = app.subscribe((state) => {
+            if (state && state.sessionToken) {
+              clearTimeout(timeout);
+              unsubscribe();
+              resolve(state.sessionToken);
+            }
+          });
+
+          // Request session token
+          app.dispatch({
+            type: 'APP::SESSION_TOKEN::REQUEST'
+          });
+        });
+
+        if (token) {
+          console.log('✅ Session token obtained via dispatch');
+          return token;
+        }
+      } catch (dispatchError) {
+        console.log('⚠️ Dispatch session token failed:', dispatchError.message);
+      }
+    }
+
+    // Method 2: Try the idToken method (App Bridge v3) with timeout
     if (app.idToken && typeof app.idToken === 'function') {
       console.log('🔄 Getting session token via app.idToken()');
       try {
@@ -30,7 +73,7 @@ export const getSessionToken = async (app) => {
       }
     }
 
-    // Method 2: Try legacy getSessionToken import with timeout
+    // Method 3: Try legacy getSessionToken import with timeout
     try {
       const { getSessionToken: legacyGetSessionToken } = await import('@shopify/app-bridge/utilities');
       console.log('🔄 Getting session token via legacy method');
@@ -47,29 +90,26 @@ export const getSessionToken = async (app) => {
       console.log('⚠️ Legacy getSessionToken failed:', importError.message);
     }
 
-    // Method 3: Try using app state or features to check if session tokens are available
-    if (app.featuresAvailable && typeof app.featuresAvailable === 'function') {
-      console.log('🔄 Checking available features for session token support');
-      try {
-        const features = await withTimeout(app.featuresAvailable(), 2000, 'Features check timeout');
-        console.log('🔍 Available features:', features);
+    // Method 4: Try creating authenticated fetch function (App Bridge v3 approach)
+    try {
+      console.log('🔄 Trying to create authenticated fetch function');
+      
+      // Import the authenticatedFetch utility from App Bridge
+      const { authenticatedFetch } = await import('@shopify/app-bridge/utilities');
+      
+      if (authenticatedFetch && typeof authenticatedFetch === 'function') {
+        console.log('🔄 Creating authenticated fetch with app instance');
+        const authFetch = authenticatedFetch(app);
         
-        // If session tokens are supported, the app should have authentication capabilities
-        if (features && (features.sessionToken || features.authentication)) {
-          console.log('✅ Session token feature detected');
-          // For now, we'll indicate session tokens are available even if we can't get the actual token
-          // This allows the app to continue functioning
-          return 'session-token-available';
+        if (authFetch && typeof authFetch === 'function') {
+          console.log('✅ Authenticated fetch created successfully - session tokens working');
+          // Store the authenticated fetch function for later use
+          window.authenticatedFetch = authFetch;
+          return 'authenticated-fetch-created';
         }
-      } catch (featuresError) {
-        console.log('⚠️ Features check failed:', featuresError.message);
       }
-    }
-
-    // Method 4: Check if we can use authenticated fetch (indicates session tokens work)
-    if (typeof app.authenticatedFetch === 'function') {
-      console.log('✅ Authenticated fetch available - session tokens supported');
-      return 'authenticated-fetch-available';
+    } catch (authFetchError) {
+      console.log('⚠️ Authenticated fetch creation failed:', authFetchError.message);
     }
 
     throw new Error('No session token method available');
