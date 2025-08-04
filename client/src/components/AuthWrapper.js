@@ -83,11 +83,34 @@ const AuthWrapper = ({ children }) => {
         return;
       }
 
-      // Check if we have shop parameter (basic authentication) - prioritize this
+      // Check if we have shop parameter - but require proper OAuth flow
       if (shop) {
         console.log('✅ Shop parameter found:', shop);
         
-        // Complete authentication immediately to prevent race conditions
+        // Check if this is a proper embedded app context with host parameter
+        if (!host && !installed) {
+          console.log('🚀 Missing host parameter, redirecting to OAuth for proper embedded setup...');
+          
+          const clientId = '0a84e1df4c003abfab2f61d8344ea04b';
+          const appUrl = window.location.origin;
+          const redirectUri = `${appUrl}/auth/callback`;
+          const scopes = 'read_products,write_products,read_orders';
+          const state = Math.random().toString(36).substring(7);
+          
+          const cleanShop = shop.replace('.myshopify.com', '');
+          
+          const oauthUrl = `https://${cleanShop}.myshopify.com/admin/oauth/authorize?` +
+            `client_id=${clientId}&` +
+            `scope=${encodeURIComponent(scopes)}&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `state=${state}`;
+          
+          console.log('Redirecting to OAuth URL for embedded app setup:', oauthUrl);
+          window.location.href = oauthUrl;
+          return;
+        }
+        
+        // Complete authentication for properly embedded apps
         completeAuthentication(true, shop, false);
         
         // Try to get session token if App Bridge is available (async, non-blocking)

@@ -8,6 +8,8 @@ import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import GiftTiers from './components/GiftTiers';
+import OAuthCallback from './components/OAuthCallback';
+import AppBridgeNavigation from './components/AppBridgeNavigation';
 
 function App() {
   // Get URL parameters for App Bridge configuration
@@ -67,12 +69,14 @@ function App() {
     <AppProvider>
       {shouldUseAppBridge ? (
         <AppBridgeProvider config={appBridgeConfig}>
+          <AppBridgeNavigation />
           <AuthWrapper>
             <Router>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/gift-tiers" element={<GiftTiers />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/auth/callback" element={<OAuthCallback />} />
               </Routes>
             </Router>
           </AuthWrapper>
@@ -84,6 +88,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/gift-tiers" element={<GiftTiers />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/auth/callback" element={<OAuthCallback />} />
             </Routes>
           </Router>
         </AuthWrapper>
