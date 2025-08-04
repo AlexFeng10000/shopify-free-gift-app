@@ -14,7 +14,7 @@ import {
   Badge
 } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
-import { getSessionToken } from '@shopify/app-bridge/utilities';
+import { getSessionToken } from '../utils/sessionToken';
 import { useAppBridgeSafe } from '../hooks/useAppBridgeSafe';
 import axios from 'axios';
 
@@ -38,14 +38,27 @@ function Analytics() {
           'Content-Type': 'application/json'
         };
 
-        // Add session token if App Bridge is available
+        // Add session token if App Bridge is available (with timeout)
         if (app) {
           try {
-            const token = await getSessionToken(app);
-            headers['Authorization'] = `Bearer ${token}`;
-            console.log('✅ Using session token for API request');
+            console.log('🔄 Analytics: Attempting to get session token...');
+            
+            // Add timeout to prevent hanging
+            const tokenPromise = getSessionToken(app);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session token timeout')), 3000)
+            );
+            
+            const token = await Promise.race([tokenPromise, timeoutPromise]);
+            
+            if (token && typeof token === 'string' && token.length > 10) {
+              headers['Authorization'] = `Bearer ${token}`;
+              console.log('✅ Analytics: Using session token for API request');
+            } else {
+              console.log('⚠️ Analytics: Session token not valid, continuing without auth');
+            }
           } catch (tokenError) {
-            console.log('⚠️ Could not get session token:', tokenError);
+            console.log('⚠️ Analytics: Could not get session token:', tokenError.message);
           }
         }
 
