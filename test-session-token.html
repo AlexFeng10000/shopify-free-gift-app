@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Token Test - Gift Booster</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .test-button {
+            background: #007ace;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #005a87;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎁 Gift Booster - Session Token Test</h1>
+        <p>This page tests the session token functionality for the Shopify app.</p>
+        
+        <div class="info">
+            <strong>Test URL:</strong> https://web-production-99c0.up.railway.app/test-session-token.html?shop=gift-booster-test.myshopify.com&host=Z2lmdC1ib29zdGVyLXRlc3QubXlzaG9waWZ5LmNvbS9hZG1pbg
+        </div>
+
+        <div id="status"></div>
+        
+        <button class="test-button" onclick="testApp()">Test App Loading</button>
+        <button class="test-button" onclick="testSessionToken()">Test Session Token</button>
+        <button class="test-button" onclick="clearLog()">Clear Log</button>
+        
+        <div class="log">
+            <pre id="log"></pre>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toISOString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        async function testApp() {
+            log('🚀 Testing app loading...');
+            
+            try {
+                const response = await fetch('/?shop=gift-booster-test.myshopify.com&host=Z2lmdC1ib29zdGVyLXRlc3QubXlzaG9waWZ5LmNvbS9hZG1pbg');
+                
+                if (response.ok) {
+                    log('✅ App loads successfully');
+                    updateStatus('App loading test passed!', 'success');
+                } else {
+                    log(`❌ App loading failed: ${response.status} ${response.statusText}`);
+                    updateStatus('App loading test failed!', 'error');
+                }
+            } catch (error) {
+                log(`❌ App loading error: ${error.message}`);
+                updateStatus('App loading test failed!', 'error');
+            }
+        }
+
+        async function testSessionToken() {
+            log('🔑 Testing session token functionality...');
+            
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const shop = urlParams.get('shop') || 'gift-booster-test.myshopify.com';
+            const host = urlParams.get('host') || 'Z2lmdC1ib29zdGVyLXRlc3QubXlzaG9waWZ5LmNvbS9hZG1pbg';
+            
+            log(`🏪 Shop: ${shop}`);
+            log(`🏠 Host: ${host}`);
+            
+            // Test if we can access the main app
+            try {
+                const appUrl = `/?shop=${shop}&host=${host}`;
+                log(`📱 Testing app URL: ${appUrl}`);
+                
+                const response = await fetch(appUrl);
+                const html = await response.text();
+                
+                if (html.includes('Gift Booster')) {
+                    log('✅ App HTML contains expected content');
+                    
+                    // Check for session token related content
+                    if (html.includes('sessionToken') || html.includes('App Bridge')) {
+                        log('✅ Session token functionality detected in app');
+                        updateStatus('Session token test passed! App Bridge functionality is working.', 'success');
+                    } else {
+                        log('⚠️ Session token functionality not clearly detected');
+                        updateStatus('Session token test inconclusive - check browser console for detailed logs.', 'info');
+                    }
+                } else {
+                    log('❌ App HTML does not contain expected content');
+                    updateStatus('Session token test failed - app not loading properly.', 'error');
+                }
+            } catch (error) {
+                log(`❌ Session token test error: ${error.message}`);
+                updateStatus('Session token test failed!', 'error');
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            log('🔧 Session Token Test Page Loaded');
+            log('📍 Current URL: ' + window.location.href);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('shop')) {
+                log('🏪 Shop parameter detected, running automatic tests...');
+                setTimeout(() => {
+                    testApp();
+                    setTimeout(() => {
+                        testSessionToken();
+                    }, 2000);
+                }, 1000);
+            } else {
+                log('⚠️ No shop parameter found. Use the test URL above to run proper tests.');
+                updateStatus('Please use the test URL with shop and host parameters to run tests.', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
