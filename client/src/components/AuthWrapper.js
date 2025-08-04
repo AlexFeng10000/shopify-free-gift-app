@@ -135,19 +135,9 @@ const AuthWrapper = ({ children }) => {
   };
 
   useEffect(() => {
-    // Add a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (loading) {
-        console.log('⚠️ Loading timeout reached, forcing authentication check');
-        checkAuthStatus();
-      }
-    }, 3000);
-
     checkAuthStatus();
-
-    return () => clearTimeout(loadingTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Remove app dependency to prevent infinite loops
+  }, []); // Run once on mount
 
   if (loading) {
     return (
