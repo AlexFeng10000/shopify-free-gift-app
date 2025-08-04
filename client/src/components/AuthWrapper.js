@@ -66,40 +66,33 @@ const AuthWrapper = ({ children }) => {
         return;
       }
 
-      // If we have App Bridge instance, try to get session token
-      console.log('🔍 AuthWrapper - Checking session token conditions:', { app: !!app, shop: !!shop, host: !!host });
-      
-      if (app && shop) {
-        console.log('🔗 App Bridge available, getting session token...');
-        
-        // Try to get session token using our improved utility
-        try {
-          console.log('🔄 Attempting to get session token...');
-          const token = await getSessionToken(app);
-          
-          if (token) {
-            console.log('✅ Session token obtained successfully');
-            console.log('🎫 Token preview:', token.substring(0, 20) + '...');
-            setSessionToken(token);
-            window.sessionToken = token;
-            console.log('💾 Session token stored globally');
-          }
-        } catch (tokenError) {
-          console.log('⚠️ Session token failed, continuing without token:', tokenError.message);
-          // Continue without session token - this is acceptable for many use cases
-        }
-        
-        // Set authentication regardless of session token success
-        setShopDomain(shop);
-        setAuthenticated(true);
-        setLoading(false);
-        return;
-      }
-
-      // Check if we have shop parameter (basic authentication)
+      // Check if we have shop parameter (basic authentication) - prioritize this
       if (shop) {
         console.log('✅ Shop parameter found:', shop);
         setShopDomain(shop);
+        
+        // Try to get session token if App Bridge is available
+        if (app) {
+          console.log('🔗 App Bridge available, getting session token...');
+          try {
+            console.log('🔄 Attempting to get session token...');
+            const token = await getSessionToken(app);
+            
+            if (token) {
+              console.log('✅ Session token obtained successfully');
+              console.log('🎫 Token preview:', token.substring(0, 20) + '...');
+              setSessionToken(token);
+              window.sessionToken = token;
+              console.log('💾 Session token stored globally');
+            }
+          } catch (tokenError) {
+            console.log('⚠️ Session token failed, continuing without token:', tokenError.message);
+            // Continue without session token - this is acceptable for many use cases
+          }
+        } else {
+          console.log('⚠️ App Bridge not available yet, continuing without session token');
+        }
+        
         setAuthenticated(true);
         setLoading(false);
         return;
@@ -119,9 +112,19 @@ const AuthWrapper = ({ children }) => {
   };
 
   useEffect(() => {
+    // Add a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.log('⚠️ Loading timeout reached, forcing authentication check');
+        checkAuthStatus();
+      }
+    }, 3000);
+
     checkAuthStatus();
+
+    return () => clearTimeout(loadingTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [app]);
+  }, []); // Remove app dependency to prevent infinite loops
 
   if (loading) {
     return (
