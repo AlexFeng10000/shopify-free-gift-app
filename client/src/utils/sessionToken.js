@@ -1,3 +1,13 @@
+// Timeout wrapper for promises
+const withTimeout = (promise, timeoutMs, timeoutMessage = 'Operation timed out') => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    )
+  ]);
+};
+
 // App Bridge v3 compatible session token utilities
 export const getSessionToken = async (app) => {
   if (!app) {
@@ -6,34 +16,42 @@ export const getSessionToken = async (app) => {
 
   // Try different methods to get session token based on App Bridge version
   try {
-    // Method 1: Try the idToken method (App Bridge v3)
+    // Method 1: Try the idToken method (App Bridge v3) with timeout
     if (app.idToken && typeof app.idToken === 'function') {
       console.log('🔄 Getting session token via app.idToken()');
-      const token = await app.idToken();
-      if (token) {
-        console.log('✅ Session token obtained via idToken');
-        return token;
+      try {
+        const token = await withTimeout(app.idToken(), 3000, 'idToken timeout');
+        if (token) {
+          console.log('✅ Session token obtained via idToken');
+          return token;
+        }
+      } catch (idTokenError) {
+        console.log('⚠️ idToken method failed:', idTokenError.message);
       }
     }
 
-    // Method 2: Try legacy getSessionToken import first (more reliable)
+    // Method 2: Try legacy getSessionToken import with timeout
     try {
       const { getSessionToken: legacyGetSessionToken } = await import('@shopify/app-bridge/utilities');
       console.log('🔄 Getting session token via legacy method');
-      const token = await legacyGetSessionToken(app);
+      const token = await withTimeout(
+        legacyGetSessionToken(app), 
+        3000, 
+        'Legacy getSessionToken timeout'
+      );
       if (token) {
         console.log('✅ Session token obtained via legacy method');
         return token;
       }
     } catch (importError) {
-      console.log('⚠️ Legacy getSessionToken not available:', importError.message);
+      console.log('⚠️ Legacy getSessionToken failed:', importError.message);
     }
 
     // Method 3: Try using app state or features to check if session tokens are available
     if (app.featuresAvailable && typeof app.featuresAvailable === 'function') {
       console.log('🔄 Checking available features for session token support');
       try {
-        const features = await app.featuresAvailable();
+        const features = await withTimeout(app.featuresAvailable(), 2000, 'Features check timeout');
         console.log('🔍 Available features:', features);
         
         // If session tokens are supported, the app should have authentication capabilities

@@ -71,12 +71,22 @@ const AuthWrapper = ({ children }) => {
         console.log('✅ Shop parameter found:', shop);
         setShopDomain(shop);
         
-        // Try to get session token if App Bridge is available
+        // Try to get session token if App Bridge is available (with timeout)
         if (app) {
           console.log('🔗 App Bridge available, getting session token...');
+          
+          // Use a timeout to prevent hanging on session token
+          const sessionTokenTimeout = setTimeout(() => {
+            console.log('⚠️ Session token timeout, continuing without token');
+            setAuthenticated(true);
+            setLoading(false);
+          }, 5000);
+          
           try {
             console.log('🔄 Attempting to get session token...');
             const token = await getSessionToken(app);
+            
+            clearTimeout(sessionTokenTimeout);
             
             if (token) {
               console.log('✅ Session token obtained successfully');
@@ -86,6 +96,7 @@ const AuthWrapper = ({ children }) => {
               console.log('💾 Session token stored globally');
             }
           } catch (tokenError) {
+            clearTimeout(sessionTokenTimeout);
             console.log('⚠️ Session token failed, continuing without token:', tokenError.message);
             // Continue without session token - this is acceptable for many use cases
           }
