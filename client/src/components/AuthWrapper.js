@@ -83,13 +83,15 @@ const AuthWrapper = ({ children }) => {
         return;
       }
 
-      // Check if we have shop parameter - but require proper OAuth flow
+      // Check if we have shop parameter - but ALWAYS require proper OAuth flow
       if (shop) {
         console.log('✅ Shop parameter found:', shop);
         
-        // Check if this is a proper embedded app context with host parameter
-        if (!host && !installed) {
-          console.log('🚀 Missing host parameter, redirecting to OAuth for proper embedded setup...');
+        // For embedded apps, we MUST have a host parameter from proper OAuth flow
+        // This is required by Shopify's embedded app requirements
+        if (!host) {
+          console.log('🚀 Missing host parameter - redirecting to OAuth for proper embedded setup...');
+          console.log('📋 Shopify requires proper OAuth flow for embedded apps');
           
           const clientId = '0a84e1df4c003abfab2f61d8344ea04b';
           const appUrl = window.location.origin;
@@ -105,12 +107,13 @@ const AuthWrapper = ({ children }) => {
             `redirect_uri=${encodeURIComponent(redirectUri)}&` +
             `state=${state}`;
           
-          console.log('Redirecting to OAuth URL for embedded app setup:', oauthUrl);
+          console.log('🔄 Redirecting to OAuth URL for proper embedded app setup:', oauthUrl);
           window.location.href = oauthUrl;
           return;
         }
         
-        // Complete authentication for properly embedded apps
+        // Only authenticate if we have proper host parameter from OAuth
+        console.log('✅ Proper embedded app context detected with host parameter');
         completeAuthentication(true, shop, false);
         
         // Try to get session token if App Bridge is available (async, non-blocking)

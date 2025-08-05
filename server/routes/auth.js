@@ -165,8 +165,15 @@ router.get('/callback', async (req, res) => {
     // Redirect to app UI with success
     console.log(`🎯 Redirecting to app UI for shop: ${shop}`);
     
-    // Redirect to the main app with shop parameter
-    res.redirect(`/?shop=${shop}&installed=true`);
+    // Redirect to the main app with shop parameter and host
+    console.log(`🎯 Redirecting to app UI for shop: ${shop}`);
+    
+    // Generate proper host parameter for embedded app
+    const shopDomain = shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
+    const host = Buffer.from(`${shopDomain}/admin`).toString('base64').replace(/=/g, '');
+    
+    // Redirect to the main app with proper embedded parameters
+    res.redirect(`/?shop=${shop}&host=${host}&installed=true`);
 
   } catch (error) {
     console.error('❌ OAuth callback failed:', error);
@@ -307,6 +314,87 @@ router.get('/test-oauth', async (req, res) => {
       message: error.message,
       shop,
       timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * API OAuth Callback Handler
+ * This is for the client-side OAuthCallback component
+ */
+router.post('/callback', async (req, res) => {
+  try {
+    const { shop, code, state, hmac } = req.body;
+
+    if (!shop || !code) {
+      return res.status(400).json({ 
+        error: 'Missing required OAuth parameters',
+        required: ['shop', 'code']
+      });
+    }
+
+    console.log(`🔄 API OAuth callback for shop: ${shop}`);
+
+    if (!shopify) {
+      // Demo mode - return success
+      console.log('⚠️  Demo mode: API OAuth callback, returning success');
+      return res.json({
+        success: true,
+        shop: shop,
+        demo: true,
+        message: 'Demo mode authentication successful'
+      });
+    }
+
+    // Manual OAuth token exchange (same as GET callback)
+    const tokenUrl = `https://${shop}/admin/oauth/access_token`;
+    const tokenData = {
+      client_id: process.env.SHOPIFY_API_KEY,
+      client_secret: process.env.SHOPIFY_API_SECRET,
+      code: code
+    };
+
+    console.log(`🔄 API: Exchanging code for access token...`);
+
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tokenData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${response.status} ${response.statusText}`);
+    }
+
+    const tokenResponse = await response.json();
+    console.log(`✅ API OAuth completed for shop: ${shop}`);
+
+    // Store session data
+    const session = {
+      shop: shop,
+      accessToken: tokenResponse.access_token,
+      scope: tokenResponse.scope,
+      timestamp: new Date().toISOString()
+    };
+
+    global.shopifySessions = global.shopifySessions || {};
+    global.shopifySessions[shop] = session;
+
+    // Return success response for API
+    res.json({
+      success: true,
+      shop: shop,
+      scope: tokenResponse.scope,
+      message: 'OAuth authentication successful'
+    });
+
+  } catch (error) {
+    console.error('❌ API OAuth callback failed:', error);
+    res.status(500).json({ 
+      error: 'Authentication callback failed',
+      message: error.message
     });
   }
 });
