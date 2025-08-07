@@ -22,30 +22,17 @@ function App() {
                           (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) ||
                           document.referrer.includes('shopify.com');
 
-  // Try to extract host from referrer if missing
-  if (!host && document.referrer && shop) {
-    try {
-      const referrerUrl = new URL(document.referrer);
-      if (referrerUrl.hostname.includes('shopify.com')) {
-        // Use the shop parameter to create the correct host parameter
-        const shopDomain = shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
-        host = btoa(`${shopDomain}/admin`).replace(/=/g, '');
-        console.log('🔧 Extracted host using shop domain:', host);
-        console.log('🔍 Shop domain used:', shopDomain);
-      }
-    } catch (e) {
-      console.log('⚠️ Could not extract host from referrer:', e.message);
-    }
-  }
+  // For embedded app compliance, we should NOT generate host parameters client-side
+  // The host parameter MUST come from Shopify's OAuth flow
+  console.log('🔍 Host parameter analysis:', {
+    hostFromUrl: host,
+    shopFromUrl: shop,
+    isInShopifyAdmin: isInShopifyAdmin,
+    referrer: document.referrer
+  });
 
-  // Generate host parameter if still missing but we're in Shopify context
+  // Only use the host parameter if it came from the URL (OAuth flow)
   let effectiveHost = host;
-  if (!host && shop && isInShopifyAdmin) {
-    // Generate host parameter from shop domain
-    const shopDomain = shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
-    effectiveHost = btoa(`${shopDomain}/admin`).replace(/=/g, '');
-    console.log('🔧 Generated host parameter for embedded context:', effectiveHost);
-  }
 
   // App Bridge configuration - use real host if available, otherwise effectiveHost
   const appBridgeConfig = {
