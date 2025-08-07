@@ -34,12 +34,20 @@ function App() {
   // Only use the host parameter if it came from the URL (OAuth flow)
   let effectiveHost = host;
 
-  // App Bridge configuration - use real host if available, otherwise effectiveHost
+  // App Bridge configuration - MUST use host from OAuth flow for compliance
   const appBridgeConfig = {
     apiKey: '0a84e1df4c003abfab2f61d8344ea04b',
-    host: host || effectiveHost, // Prefer real host parameter for session tokens
+    host: effectiveHost, // Only use host parameter from OAuth flow
     forceRedirect: true,
   };
+
+  // Log App Bridge configuration for debugging
+  console.log('🔧 App Bridge Configuration:', {
+    apiKey: appBridgeConfig.apiKey ? 'Set' : 'Missing',
+    host: appBridgeConfig.host ? 'Present' : 'Missing',
+    hostValue: appBridgeConfig.host,
+    forceRedirect: appBridgeConfig.forceRedirect
+  });
 
   // Always use App Bridge Provider if we have shop parameter and are in Shopify context
   const shouldUseAppBridge = (effectiveHost || isInShopifyAdmin) && shop;
